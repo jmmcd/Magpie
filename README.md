@@ -2,6 +2,10 @@
 
 # Introduction
 
+Genetic Programming is a form of program synthesis by evolutionary algorithms,
+[invented by Richard Forsyth in 1981](https://www.emerald.com/insight/content/doi/10.1108/eb005587/full/html).
+
+
 GE (O'Neill & Ryan) is a well-known form of GP, where the GP
 language is defined by a grammar and individual genomes are just
 lists of ints. 
