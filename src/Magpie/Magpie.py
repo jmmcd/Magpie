@@ -12,14 +12,16 @@ from .grammar import Grammar, derive_string
 from .exceptions import *
 from .fitness import evaluate, one_m_r2, latex_eqn
 from .interval import Interval, generate_bounds
-from .benchmarks import pysr_benchmark, winequality_red
 from .pareto import is_pareto_efficient
 
 class MagpieRegressor(BaseEstimator, RegressorMixin):
     def __init__(self,
-                 maxevals, initevals, mutprob,
-                 maxgenomelen, maxcohortlen,
-                 gramfile,
+                 maxevals=10000, 
+                 initevals=3000, 
+                 mutprob=0.8,
+                 maxgenomelen=30, 
+                 maxcohortlen=7,
+                 gramfile="symbolic_regression.bnf",
                  valsize=0.2, 
                  initprob=0.0):
         self.maxevals = maxevals
@@ -186,7 +188,9 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
             X = X.values # if X is a DF, extract the values TODO should handle DFs as sklearn does
         except:
             pass
-        return self.equation_[-3](X)
+        # access the equation in the right format
+        # self.equation_ is a DataFrame, so we can use .at[] to get the function
+        return self.equation_.at[0, "equation_fn_transpose"](X)
 
 class EvoLengthPop:
     """The population data structure. It consists of cohorts, one for each
@@ -259,20 +263,24 @@ class EvoLengthPop:
             if not len(cohort): continue # empty bin
             current = min(cohort, key=lambda x: x[2]) # (L, cost, cost_val, <various fns>, g)
             if best is None or current[2] < best[2]: # this is the best so far by validation MSE
-                best = current
+                best = current[:] # have to copy or we will modify badly (add latex twice)
                 eqns.append(current) # append only if current equation is the best yet
 
         # add latex equation as the last element of each equation
-        for eqn in eqns: # element[4] is psc, ie an equation in text with numerical constants
-            eqn = eqn + (latex_eqn(eqn[4], colnames),)
+        # element[4] is psc, ie an equation in text with numerical constants
+        eqns = [eqn + (latex_eqn(eqn[4], colnames),) for eqn in eqns] 
         best = best + (latex_eqn(best[4], colnames),)
-        columns = ['used_codons', 'loss', 'loss_validation', 'equation_no_consts', 'equation', 
-                   'equation_fn', 'consts equation_fn_consts', 'equation_fn_transpose', 'latex']
-        eqns = pd.Dataframe(eqns, columns=columns) 
-        best = pd.Dataframe([best], columns=columns)
+        print(len(eqns[0]), len(best))
+        columns = ['size', 'loss', 'loss_validation', 'equation_no_consts', 'equation', 
+                   'equation_fn', 'consts_for_equation_fn_no_consts', 'equation_fn_transpose_no_consts', 'equation_fn_transpose', 'genome', 'latex']
+        # for x, y, z in zip(eqns[0], best, columns):
+        #     print(z, x, y)
+        eqns = pd.DataFrame(eqns, columns=columns) 
+        # print(best)
+        best = pd.DataFrame([best], columns=columns)
         return eqns, best
 
-    def __str__(self):
+    def __str__(self): # redo this or remove 
         s = "L trainfit valfit eqn\n"
         for L in range(len(self.sizes)):
             cohort = self.inds[L]
@@ -283,9 +291,10 @@ class EvoLengthPop:
 
 
 if __name__ == '__main__':
-    X_train, X_test, y_train, y_test = winequality_red() # pysr_benchmark
-    gramfile = "symbolic_regression.bnf"
-    MR = MagpieRegressor(1000, 300, 0.5, 30, 7, gramfile, 0.3)
-    MR.fit(X_train, y_train)
-    R2_test = MR.score(X_test, y_test)
-    print(f"R^2 on test data: {R2_test:.2f}")
+    from sklearn.datasets import load_diabetes
+    from sklearn.model_selection import train_test_split
+    X, y = load_diabetes(return_X_y=True)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+    mr = MagpieRegressor()
+    mr.fit(X_train, y_train)
+    print(f"R^2 on test data: {mr.score(X_test, y_test):.2f}")

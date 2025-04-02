@@ -26,7 +26,7 @@ class Grammar(object):
 
         self.read_bnf_file(file_name, **kwargs)
         # TODO check lcm
-        self.production_lcm = math.lcm(len(self.rules[k]) for k in self.non_terminals)
+        self.production_lcm = math.lcm(*(len(self.rules[k]) for k in self.non_terminals))
         # print('grammar self.production_lcm', self.production_lcm)
 
     def read_bnf_file(self, file_name, **kwargs):
