@@ -190,6 +190,7 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
             pass
         # access the equation in the right format
         # self.equation_ is a DataFrame, so we can use .at[] to get the function
+        # TODO: confirm we are using the right element of self.equation_
         return self.equation_.at[0, "equation_fn_transpose"](X)
 
 class EvoLengthPop:
