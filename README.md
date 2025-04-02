@@ -34,9 +34,18 @@ Step 2:
 
 
 
+# Installation
+
+`pip install -e .`
 
 
+# Authors
 
+James McDermott (2022-2025)
+
+# Copyright
+
+See LICENSE
 
 
 
@@ -45,7 +54,7 @@ Step 2:
 
 In GE there is a genotype to phenotype mapping, which is
 just grammatical derivation. The production choice at each step is
-given by the next int in the genome. DONE.
+given by the next int in the genome. 
 
 Improvements over GE are certainly possible (Rothlauf; Whigham; LTGE, by Moraglio and McDermott, unpublished) but we will not pursue them for now.
 
