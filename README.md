@@ -20,15 +20,12 @@ Optimisation.
 
 # Algorithm
 
-Step 1:
-* Create N individuals (no invalids, no duplicates)
-
-Step 2:
-* While our budget is not exhausted:
-  * Create a Pareto front (PF) which will be used for selection and as the final return value. This is a set of expressions.
+1. Create N individuals (no invalids, no duplicates)
+2. Create a Pareto front (PF) which will be used for selection and as the final return value. This is a set of expressions.
+3. While our budget is not exhausted:
   * Select an individual at random from the PF and mutate. If not a duplicate, do bounds-checking ie interval arithmetic. If valid, evaluate and add to caches and PF.
 
-(no fixed pop size or number of generations)
+(There is no fixed pop size or number of generations.)
 
 
 
