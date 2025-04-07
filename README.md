@@ -1,6 +1,6 @@
 # Magpie: multi-objective archive genetic programming (from Ireland)
 
-![Photo of a magpie, by Zdeněk Macháček on Unsplash](img/magpie.jpg)
+![Photo of a magpie, by Zdeněk Macháček on Unsplash](img/logo.jpg)
 
 Photo by <a href="https://unsplash.com/@zmachacek?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash">Zdeněk Macháček</a> on <a href="https://unsplash.com/photos/black-and-white-bird-on-grass-field-mOKHZYMhnQA?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash">Unsplash</a>
 
