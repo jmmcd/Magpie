@@ -24,13 +24,13 @@ Optimisation.
 
 # Algorithm
 
-1. Create N individuals (no invalids, no duplicates)
-2. Create a Pareto front (PF) which will be used for selection and as the final return value. This is a set of expressions.
+1. Create a set of bins, one per integer size, up to some maximum size. Each bin has a max capacity.
+2. Create N individuals, ie regression equations. For each individual, evaluate fitness and add it to the appropriate bin based on its size.
 3. While our budget is not exhausted:
-  * Select an individual at random from the PF and mutate. If not a duplicate, do bounds-checking ie interval arithmetic. If valid, evaluate and add to caches and PF.
-
-(There is no fixed pop size or number of generations.)
-
+4. Select an individual at random from the bins and mutate (or select two and crossover). Evaluate fitness and add it to the appropriate bin based on its size. (There is no fixed pop size or number of generations.)
+5. When a bin is over-capacity, remove the worst from that bin based on fitness.
+6. By the way, keep a cache of individuals seen. If step 2 or step 4 creates a duplicate at genotype or phenotype level, discard it before adding.
+7. By the way, evaluation for fitness may include evaluation for invalid computations, using interval arithmetic.
 
 
 
@@ -179,7 +179,7 @@ Other pointless formulae can also be identified and discarded before
 evaluation, eg log(c0). TODO.
 
 PySR (Cramner) incorporates special complexity penalties which
-prevent non-idiomatic functions such as sin(sin(sin(x0))). TODO.
+prevent non-idiomatic functions such as sin(sin(sin(x0))). ITEA (Olivetti) achieved similar in a different way. TODO.
 
 Sympy could also be used to simplify formulae before
 evaluation. Rockett showed that simplification at the end helps more
@@ -219,7 +219,7 @@ TODO: save processing by caching subtrees' semantics.
 
 TODO: Use namedtuples instead of plain tuples to store individuals.
 
-TODO: compare against PySR, FFX, PyOperon...
+TODO: compare against PySR, FFX, PyOperon, QD-GP or MAP-Elites GP
 
 TODO: Use GE_RANGE for consts as well as for vars
 <constidx> ::= GE_RANGE:n_consts
@@ -233,8 +233,6 @@ TODO: export final equations to a csv, to sympy, and to latex (and simplify/beau
 TODO: Sensitivity analysis. One approach would be, apply a 95%, 90% confidence bound on each variable using interval, ie x0 = [0.5, 0.7], and see what are the possible outputs of the model. Another approach: for each variable, choose the *mean* for every other variable, and vary this variable from min to max of its range, to see the effect on the output. Another approach: for each training point, for each variable x (holding others constant), calculate f(x) - f(x - 1SD) and calculate f(x + 1SD) - f(x), that is calculate the effect of a 1SD increase, but in two scenarios. If either x - 1SD or x + 1SD goes outside the range of y, consider discarding it? Maybe use 0.1 SD instead. Then for each variable, we can see the distribution of the effect on f of a 1 SD increase in x.
 
 Maybe this distribution tells us something interesting about f. If it includes both pos and neg, does that tell us the model is non-linear in a useful way?
-
-
 
 
 interval arithmetic example:
