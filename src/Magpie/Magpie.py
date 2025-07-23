@@ -16,7 +16,7 @@ from .pareto import is_pareto_efficient
 
 class MagpieRegressor(BaseEstimator, RegressorMixin):
     def __init__(self,
-                 maxevals=10000, 
+                 maxevals=20000, 
                  initevals=3000, 
                  mutprob=0.8,
                  maxgenomelen=30, 
@@ -189,8 +189,9 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
         except:
             pass
         # access the equation in the right format
-        # self.equation_ is a DataFrame, so we can use .at[] to get the function
+        # self.equation_ is a DataFrame of 1 row so we can use .at[0, "equation_fn_transpose"] to get the function
         # TODO: confirm we are using the right element of self.equation_
+
         return self.equation_.at[0, "equation_fn_transpose"](X)
 
 class EvoLengthPop:
@@ -266,12 +267,13 @@ class EvoLengthPop:
             if best is None or current[2] < best[2]: # this is the best so far by validation MSE
                 best = current[:] # have to copy or we will modify badly (add latex twice)
                 eqns.append(current) # append only if current equation is the best yet
+        assert best is not None, "No equations found in the population"
 
         # add latex equation as the last element of each equation
         # element[4] is psc, ie an equation in text with numerical constants
         eqns = [eqn + (latex_eqn(eqn[4], colnames),) for eqn in eqns] 
         best = best + (latex_eqn(best[4], colnames),)
-        print(len(eqns[0]), len(best))
+        # print(len(eqns[0]), len(best))
         columns = ['size', 'loss', 'loss_validation', 'equation_no_consts', 'equation', 
                    'equation_fn', 'consts_for_equation_fn_no_consts', 'equation_fn_transpose_no_consts', 'equation_fn_transpose', 'genome', 'latex']
         # for x, y, z in zip(eqns[0], best, columns):
@@ -279,6 +281,8 @@ class EvoLengthPop:
         eqns = pd.DataFrame(eqns, columns=columns) 
         # print(best)
         best = pd.DataFrame([best], columns=columns)
+        #print("Best equation:")
+        #print(best)
         return eqns, best
 
     def __str__(self): # redo this or remove 
@@ -296,6 +300,9 @@ if __name__ == '__main__':
     from sklearn.model_selection import train_test_split
     X, y = load_diabetes(return_X_y=True)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-    mr = MagpieRegressor()
+    mr = MagpieRegressor(maxevals=20000, initevals=5000)
     mr.fit(X_train, y_train)
-    print(f"R^2 on test data: {mr.score(X_test, y_test):.2f}")
+    pd.set_option('display.float_format', '{:.2f}'.format)
+    pd.set_option('display.max_colwidth', None)
+    print(mr.equations_[["size", "loss", "loss_validation", "equation"]])
+    print(f"The R^2 on test data of the eqn with lowest validation MSE: {mr.score(X_test, y_test):.2f}")

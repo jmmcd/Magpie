@@ -42,14 +42,16 @@ Optimisation.
 # Example usage
 
 ```
-from Magpie import MagpieRegressor
 from sklearn.datasets import load_diabetes
 from sklearn.model_selection import train_test_split
 X, y = load_diabetes(return_X_y=True)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-mr = MagpieRegressor()
+mr = MagpieRegressor(maxevals=20000, initevals=5000)
 mr.fit(X_train, y_train)
-print(f"R^2 on test data: {mr.score(X_test, y_test):.2f}")
+pd.set_option('display.float_format', '{:.2f}'.format)
+pd.set_option('display.max_colwidth', None)
+print(mr.equations_[["size", "loss", "loss_validation", "equation"]])
+print(f"The R^2 on test data of the eqn with lowest validation MSE: {mr.score(X_test, y_test):.2f}")
 ```
 
 
