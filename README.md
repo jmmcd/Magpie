@@ -54,6 +54,19 @@ print(mr.equations_[["size", "loss", "loss_validation", "equation"]])
 print(f"The R^2 on test data of the eqn with lowest validation MSE: {mr.score(X_test, y_test):.2f}")
 ```
 
+Result:
+
+```
+   size  loss  loss_validation                                                                             equation
+0     2  0.41             0.33                                                                                 X[2]
+1     6  0.35             0.27                                                                        (X[2] + X[8])
+2    10  0.35             0.27                                                               (X[8] + (X[2] + X[2]))
+3    18  0.31             0.26                                             (X[8] + ((X[2] - X[6]) + (X[2] + X[3])))
+4    27  0.31             0.26             (X[8] + ((X[3] - (-150.8749 - (X[2] + log(364.6661)))) - (X[6] - X[2])))
+5    30  0.35             0.26  ((((527.9763 + X[9]) + (0.5623 / X[0])) * X[8]) - ((X[2] * -765.4451) + -151.6155))
+The R^2 on test data of the eqn with lowest validation MSE: 0.49
+```
+
 
 
 # Authors
