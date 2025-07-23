@@ -4,6 +4,8 @@ from pathlib import Path
 import random
 import numpy as np
 import pandas as pd
+from dataclasses import dataclass
+from typing import Optional, Callable
 np.seterr(all='raise')
 from sklearn.model_selection import train_test_split
 from sklearn.base import BaseEstimator, RegressorMixin
@@ -13,6 +15,39 @@ from .exceptions import *
 from .fitness import evaluate, one_m_r2, latex_eqn
 from .interval import Interval, generate_bounds
 from .pareto import is_pareto_efficient
+
+@dataclass
+class Individual:
+    """Represents an individual equation in the population."""
+    used_codons: int
+    train_loss: float
+    validation_loss: Optional[float]
+    equation_str: str  # ps - raw equation string
+    equation_with_consts: str  # psc - equation with optimized constants
+    equation_fn: Callable  # p - function that takes (X, C)
+    optimized_consts: np.ndarray  # newc - optimized constants
+    equation_fn_with_consts: Callable  # newp - function with constants built in
+    equation_fn_transpose: Callable  # p_transpose - function that accepts sklearn format X
+    genome: np.ndarray
+    latex: Optional[str] = None
+    
+    
+    @classmethod
+    def from_evaluation(cls, used_codons: int, genome: np.ndarray, eval_result: tuple):
+        """Create Individual from evaluation result."""
+        cost, cost_test, ps, psc, p, newc, newp, p_transpose = eval_result
+        return cls(
+            used_codons=used_codons,
+            train_loss=cost,
+            validation_loss=cost_test,
+            equation_str=ps,
+            equation_with_consts=psc,
+            equation_fn=p,
+            optimized_consts=newc,
+            equation_fn_with_consts=newp,
+            equation_fn_transpose=p_transpose,
+            genome=genome.copy()
+        )
 
 class MagpieRegressor(BaseEstimator, RegressorMixin):
     def __init__(self,
@@ -107,15 +142,15 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
                     g = self.random_genome()
                 elif r < self.initprob + self.mutprob:
                     # take a random genome from the elite and mutate
-                    ind = pop.random() # get random ind from pop. genome is at idx -1
-                    uc, g = ind[0], ind[-1]
+                    ind = pop.random() # get random ind from pop
+                    uc, g = ind.used_codons, ind.genome
                     g = self.mutate_genome(uc, g)
                 else:
                     # xover
                     ind0 = pop.random()
                     ind1 = pop.random()
-                    uc0, g0 = ind0[0], ind0[-1]
-                    uc1, g1 = ind1[0], ind1[-1]
+                    uc0, g0 = ind0.used_codons, ind0.genome
+                    uc1, g1 = ind1.used_codons, ind1.genome
                     g = self.xover_genome(uc0, g0, uc1, g1)
 
             try:
@@ -137,8 +172,9 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
                 f_cache[ps] = used_codons, *res # update ps fitness value
 
                 
-                # store the individual in the pop structure
-                if pop.add((used_codons, *res, g)):
+                # create Individual and store in the pop structure
+                individual = Individual.from_evaluation(used_codons, g, res)
+                if pop.add(individual):
                     pass 
                     #print(f"evals {evals} / {self.maxevals}")
                     #print(pop) # print pop only if there was a change
@@ -215,24 +251,26 @@ class EvoLengthPop:
         self.total_size = sum(self.sizes)
         self.inds = [[] for _ in range(maxlen + 1)]
 
-    def add(self, ind):
+    def add(self, ind: Individual):
         # add <ind> to the data structure, according to logic already
         # described. return True if we actually add
-        L, fit, *rest = ind
+        L = ind.used_codons
+        fit = ind.train_loss
+        
         if L > self.maxlen: return False # ind is too long, don't use
         cohort = self.inds[L] # which cohort does this ind fit in?
         if len(cohort) < self.sizes[L]:
             cohort.append(ind) # the cohort is not yet full, so add
             return True
         else:
-            cohort_fits = [ind[1] for ind in cohort] # get the train fit values of the cohort
+            cohort_fits = [ind.train_loss for ind in cohort] # get the train fit values of the cohort
             idx = np.argmax(cohort_fits) # get the worst element of the cohort
-            if fit <= cohort[idx][1]: # (L, cost, cost_test, ...)
+            if fit <= cohort[idx].train_loss:
                 cohort[idx] = ind # replace it
                 return True
         return False
 
-    def random(self):
+    def random(self) -> Individual:
         # get a random element of the population. notice we select the
         # cohort (length) first, then choose a random element of that.
         # this is fast, but arguably a different slower method would
@@ -263,24 +301,44 @@ class EvoLengthPop:
         for L in range(len(self.sizes)): # we are always *increasing* by size, so PF should be *decreasing* by MSE
             cohort = self.inds[L]
             if not len(cohort): continue # empty bin
-            current = min(cohort, key=lambda x: x[2]) # (L, cost, cost_val, <various fns>, g)
-            if best is None or current[2] < best[2]: # this is the best so far by validation MSE
-                best = current[:] # have to copy or we will modify badly (add latex twice)
+            current = min(cohort, key=lambda ind: ind.validation_loss)
+            if best is None or current.validation_loss < best.validation_loss: # this is the best so far by validation MSE
+                best = current # have to copy or we will modify badly (add latex twice)
                 eqns.append(current) # append only if current equation is the best yet
         assert best is not None, "No equations found in the population"
 
         # add latex equation as the last element of each equation
         # element[4] is psc, ie an equation in text with numerical constants
-        eqns = [eqn + (latex_eqn(eqn[4], colnames),) for eqn in eqns] 
-        best = best + (latex_eqn(best[4], colnames),)
-        # print(len(eqns[0]), len(best))
+        # add latex equation to each individual
+        for eqn in eqns:
+            if eqn.latex is None:
+                eqn.latex = latex_eqn(eqn.equation_with_consts, colnames)
+        if best.latex is None:
+            best.latex = latex_eqn(best.equation_with_consts, colnames)
+        # Convert to DataFrame format
+        eqn_data = []
+        for eqn in eqns:
+            eqn_data.append([
+                eqn.used_codons, eqn.train_loss, eqn.validation_loss,
+                eqn.equation_str, eqn.equation_with_consts,
+                eqn.equation_fn, eqn.optimized_consts,
+                eqn.equation_fn_with_consts, eqn.equation_fn_transpose,
+                eqn.genome, eqn.latex
+            ])
+        
+        best_data = [[
+            best.used_codons, best.train_loss, best.validation_loss,
+            best.equation_str, best.equation_with_consts,
+            best.equation_fn, best.optimized_consts,
+            best.equation_fn_with_consts, best.equation_fn_transpose,
+            best.genome, best.latex
+        ]]
+        
         columns = ['size', 'loss', 'loss_validation', 'equation_no_consts', 'equation', 
                    'equation_fn', 'consts_for_equation_fn_no_consts', 'equation_fn_transpose_no_consts', 'equation_fn_transpose', 'genome', 'latex']
-        # for x, y, z in zip(eqns[0], best, columns):
-        #     print(z, x, y)
-        eqns = pd.DataFrame(eqns, columns=columns) 
-        # print(best)
-        best = pd.DataFrame([best], columns=columns)
+        
+        eqns = pd.DataFrame(eqn_data, columns=columns)
+        best = pd.DataFrame(best_data, columns=columns)
         #print("Best equation:")
         #print(best)
         return eqns, best
@@ -290,8 +348,8 @@ class EvoLengthPop:
         for L in range(len(self.sizes)):
             cohort = self.inds[L]
             if not len(cohort): continue # empty bin
-            ind = min(cohort, key=lambda x: x[1]) # (L, cost, cost_test, <various fns>, g)
-            s += f"{L} {ind[1]:.3f} {ind[2]:.3f} {ind[4]}\n"
+            ind = min(cohort, key=lambda ind: ind.train_loss)
+            s += f"{L} {ind.train_loss:.3f} {ind.validation_loss:.3f} {ind.equation_with_consts}\n"
         return s
 
 
