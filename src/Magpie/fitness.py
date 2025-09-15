@@ -31,15 +31,48 @@ def latex_eqn(ps, varnames):
     return s
 
 def optimise(ps, X, y):
-    ps = replaceall(ps, {"sin": "np.sin", "cos": "np.cos",
+    """ Optimise the constants in ps to fit X, y.
+    ps is a string, e.g. "C[0] * X[0]"
+    X is a 2d numpy array, with shape (n_vars, n_samples)
+    y is a 1d numpy array, with shape (n_samples,)
+    Returns the optimal constants and the modified ps string with
+    the constants renumbered to be C[0], C[1], ...
+    """
+
+    # eg ps = "((C[2] * X[2]) ** (X[0] * np.log(C[4])))"
+
+    # count the number of constants in ps and remap the indices
+    # to be 0, 1, 2, ... n_consts-1
+    # eg C[2], C[4] -> C[0], C[1]
+    replace_dict = {}
+    
+    # detect all constants using a regex on C[int]
+    import re
+    pattern = r'C\[(\d+)\]'
+    matches = re.findall(pattern, ps)
+    # make them unique and sort them
+    unique_consts = sorted(set(int(m) for m in matches))
+    n_consts = len(unique_consts)
+
+    if n_consts == 0:
+        return np.array([]), ps # no constants to optimise
+    
+    # create a replace dict
+    for new_i, old_i in enumerate(unique_consts):
+        replace_dict[f"C[{old_i}]"] = f"C[{new_i}]"
+    
+    ps = replaceall(ps, replace_dict)
+    ps_np = replaceall(ps, {"sin": "np.sin", "cos": "np.cos",
                          "log": "np.log", "sqrt": "np.sqrt"})
-    p = eval("lambda X, *C: " + ps)
-    C_init = np.ones(len(X)) # TODO should this be zeros?
+    p = eval("lambda X, *C: " + ps_np) # we need the np-version for optimisation, but return the version without np. prefix
+    
+    
     try:
+        C_init = np.ones(n_consts)
         popt, pcov = curve_fit(p, X, y, p0=C_init)
     except RuntimeError:
         raise FailedOptimisationError
-    return popt
+    return popt, ps
 
 
 def check_intervals(p, bounds):
@@ -61,7 +94,7 @@ def evaluate(ps, X_train, y_train, X_test=None, y_test=None, X_bounds=None):
     # p is a function of X and C.
     # X can be 2d numpy array, or an array of intervals, or Sympy vars
 
-    newc = optimise(ps, X, y)
+    newc, ps = optimise(ps, X, y)
     fn_mappings = {"sin": np.sin, "log": np.log,
                    "cos": np.cos, "exp": np.exp} # TODO there could be more to add here
     p = eval("lambda X, C: " + ps, fn_mappings)
