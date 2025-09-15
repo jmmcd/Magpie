@@ -44,6 +44,8 @@ Optimisation.
 ```
 from sklearn.datasets import load_diabetes
 from sklearn.model_selection import train_test_split
+from Magpie import MagpieRegressor
+import pandas as pd
 X, y = load_diabetes(return_X_y=True)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 mr = MagpieRegressor(maxevals=20000, initevals=5000)
