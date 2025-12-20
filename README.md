@@ -265,6 +265,16 @@ TODO: Sensitivity analysis. One approach would be, apply a 95%, 90% confidence b
 
 Maybe this distribution tells us something interesting about f. If it includes both pos and neg, does that tell us the model is non-linear in a useful way?
 
+We should seed the initial population with some fitted equations:
+
+* Constant
+* Single linear regressions of each single variable
+* Multiple linear regressions of some pairs of triples of variables
+* Same for polynomials up to degree 4
+* Same for rational functions up to degree 4
+* Same for some log and exp templates
+* (Maybe just run FFX and use it to seed the population?)
+
 
 interval arithmetic example:
 
