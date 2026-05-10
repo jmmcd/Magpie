@@ -58,7 +58,8 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
                  maxcohortlen=7,
                  gramfile="symbolic_regression.bnf",
                  valsize=0.2, 
-                 initprob=0.0):
+                 initprob=0.0,
+                 X_bounds=None):
         self.maxevals = maxevals
         self.initevals = initevals
         self.mutprob = mutprob
@@ -72,11 +73,12 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
             self.gramfile = str(files(__package__) / 'grammars' / gramfile)
         self.valsize = valsize
         self.n_consts = self.maxgenomelen // 2
+        self.X_bounds = X_bounds
 
         assert initprob + mutprob <= 1.0
         assert initevals <= maxevals
 
-    def fit(self, X, y=None, X_bounds=None):
+    def fit(self, X, y=None):
 
         n_vars = X.shape[1]
         print('n_vars', n_vars)
@@ -97,14 +99,16 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
             X_train, X_val, y_train, y_val = \
                 X, None, y, None
         
-        if X_bounds is None:
-            self.X_bounds = None # don't use bounds
+        if self.X_bounds is None:
+            X_bounds = None
         elif type(self.X_bounds) == float:
-            assert 0.0 <= X_bounds <= 1.0 # X_bounds is a margin of error
-            self.X_bounds = generate_bounds(X_train, X_bounds) # add the margin of error
+            assert 0.0 <= self.X_bounds <= 1.0
+            X_bounds = generate_bounds(X_train, self.X_bounds)
         else:
-            assert len(X_bounds) == n_vars
-            self.X_bounds = X_bounds
+            print(len(self.X_bounds))
+            print(self.X_bounds)
+            assert len(self.X_bounds) == n_vars
+            X_bounds = self.X_bounds
 
             
         f_cache = {} # a cache to store results for all individuals ever seen
@@ -181,7 +185,7 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
                     #print("\n\n\n\n\n\n")
                 
             except (InvalidIndividualException, DuplicateIndividualException,
-                    SingularityException, FailedOptimisationError,
+                    SingularityException, FailedOptimisationError, OverflowError,
                     FloatingPointError, ZeroDivisionError):
                 # we are not using protected operators, eg AQ. instead we use raw operators like
                 # division and log, and we catch exceptions here. We also check intervals using
@@ -228,7 +232,10 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
         # self.equation_ is a DataFrame of 1 row so we can use .at[0, "equation_fn_transpose"] to get the function
         # TODO: confirm we are using the right element of self.equation_
 
-        return self.equation_.at[0, "equation_fn_transpose"](X)
+        try:
+            return self.equation_.at[0, "equation_fn_transpose"](X)
+        except:
+            return np.full(len(X), 0) # just predict 0 for everything
 
 class EvoLengthPop:
     """The population data structure. It consists of cohorts, one for each
@@ -312,9 +319,15 @@ class EvoLengthPop:
         # add latex equation to each individual
         for eqn in eqns:
             if eqn.latex is None:
-                eqn.latex = latex_eqn(eqn.equation_with_consts, colnames)
+                try:
+                    eqn.latex = latex_eqn(eqn.equation_with_consts, colnames)
+                except Exception:
+                    eqn.latex = eqn.equation_with_consts
         if best.latex is None:
-            best.latex = latex_eqn(best.equation_with_consts, colnames)
+            try:
+                best.latex = latex_eqn(best.equation_with_consts, colnames)
+            except Exception:
+                best.latex = best.equation_with_consts
         # Convert to DataFrame format
         eqn_data = []
         for eqn in eqns:
