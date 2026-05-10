@@ -169,7 +169,7 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
                 # evaluate, optimise, simplify
                 evals += 1
                 res = evaluate(ps, X_train, y_train, X_val, y_val, X_bounds)
-                if not(np.isfinite(res[0]) and np.isfinite(res[1])):
+                if not(np.isfinite(res[0])) or (res[1] is not None and not np.isfinite(res[1])):
                     # nan or inf as train or val fitness
                     raise SingularityException
                        
