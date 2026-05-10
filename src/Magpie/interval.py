@@ -28,7 +28,10 @@ want those in our programs. Keijzer (2003?) used this idea.
 To use this idea, we need to have bounds on our variables x0, x1,
 etc. For example, if x0 is measured in kg we know it will never be
 negative. Another approach is just to guess the bounds based on the
-training data.
+training data, or even on the test data, if we know what X values
+will be in the test data. This is an interesting grey area because
+there can be scenarios where we know the likely bounds on X at runtime
+even though of course we must not know the test y values.
 
 """
 
@@ -130,7 +133,7 @@ def generate_bounds(X, moe=0.0):
     import numpy as np
     bounds = []
 
-    for lb, ub in zip(np.min(X, axis=1), np.max(X, axis=1)):
+    for lb, ub in zip(np.min(X, axis=0), np.max(X, axis=0)):
 
         bounds.append(Interval(lb * (1-moe), ub * (1+moe)))
 
