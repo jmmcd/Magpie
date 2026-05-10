@@ -231,11 +231,11 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
         # access the equation in the right format
         # self.equation_ is a DataFrame of 1 row so we can use .at[0, "equation_fn_transpose"] to get the function
         # TODO: confirm we are using the right element of self.equation_
-
-        try:
-            return self.equation_.at[0, "equation_fn_transpose"](X)
-        except:
-            return np.full(len(X), 0) # just predict 0 for everything
+        with np.errstate(all='warn'):  # or all='ignore'
+            try:
+                return self.equation_.at[0, "equation_fn_transpose"](X)
+            except:
+                return np.full(len(X), 0) # just predict 0 for everything
 
 class EvoLengthPop:
     """The population data structure. It consists of cohorts, one for each
