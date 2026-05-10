@@ -7,7 +7,7 @@ __pycache__/
 *$py.class
 
 # log files from runs
-outputs/
+examples/outputs/
 
 # VS Code
 .vscode/
