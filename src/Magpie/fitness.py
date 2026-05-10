@@ -11,7 +11,12 @@ def rmse(a, b): # RMSE. cost function to be minimised.
 def one_m_r2(a, b): # 1-R^2. cost function to be minimised.
     if np.isscalar(a):
         return 1.0
-    return 1 - np.corrcoef(a, b)[0, 1]
+    ss_res = np.sum((b - a) ** 2)
+    ss_tot = np.sum((b - np.mean(b)) ** 2)
+    if ss_tot == 0:
+        return 0.0 if np.allclose(a, b) else 1.0
+    return ss_res / ss_tot  # this is 1 - R²
+
 
 def replaceall(s, d):
     for k in d:
@@ -66,13 +71,24 @@ def optimise(ps, X, y):
                          "log": "np.log", "sqrt": "np.sqrt"})
     p = eval("lambda X, *C: " + ps_np) # we need the np-version for optimisation, but return the version without np. prefix
     
-    
-    try:
-        C_init = np.ones(n_consts)
-        popt, pcov = curve_fit(p, X, y, p0=C_init)
-    except RuntimeError:
+    # attempt to optimise constants
+    # try several random starting points from normal dist
+    # keep the best
+    best_cost = np.inf
+    best_popt = None
+    for _ in range(5):
+        try:
+            C_init = np.random.randn(n_consts)
+            popt, _ = curve_fit(p, X, y, p0=C_init)
+            cost = np.sum((p(X, *popt) - y) ** 2)
+            if cost < best_cost:
+                best_cost = cost
+                best_popt = popt
+        except RuntimeError:
+            continue
+    if best_popt is None:
         raise FailedOptimisationError
-    return popt, ps
+    return best_popt, ps
 
 
 def check_intervals(p, bounds):
