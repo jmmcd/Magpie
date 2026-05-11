@@ -133,9 +133,19 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
         # good (so replacement is controlled by fitness).
         
         evals = 0
+        attempts = 0
+        max_attempts = self.maxevals * 10
         while evals < self.maxevals:
 
-            if evals < self.initevals:
+            # an individual doesn't count towards total eval budget if it is a GE invalid
+            # or is a duplicate. However, if we get many duplicates this could hang the run
+            # so we allow max 10x budget attempts to create the individuals.
+            attempts += 1
+            if attempts >= max_attempts:
+                print(f"DEBUG max_attempts {max_attempts} reached at evals={evals}, breaking", flush=True)
+                break
+
+            if evals < self.initevals or pop.is_empty():
                 # we're in the early part of the run: make random genome
                 g = self.random_genome()
             else:
@@ -160,7 +170,8 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
             try:
                 # make phenotype and check if valid and non-duplicate
                 ps, used_codons = derive_string(self.gram, g)
-                if ps is None: raise InvalidIndividualException
+                if ps is None: 
+                    raise InvalidIndividualException
                 if ps in f_cache:
                     raise DuplicateIndividualException
                 # store ps, because we have seen it. We should never revisit the same in future
@@ -184,15 +195,16 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
                     #print(pop) # print pop only if there was a change
                     #print("\n\n\n\n\n\n")
                 
-            except (InvalidIndividualException, DuplicateIndividualException,
-                    SingularityException, FailedOptimisationError, OverflowError,
-                    FloatingPointError, ZeroDivisionError):
+            except (InvalidIndividualException, DuplicateIndividualException) as e:
+                continue 
+            except (SingularityException, FailedOptimisationError, OverflowError,
+                    FloatingPointError, ZeroDivisionError) as e:
                 # we are not using protected operators, eg AQ. instead we use raw operators like
                 # division and log, and we catch exceptions here. We also check intervals using
                 # Interval bounds-checking. For any of these "expected" exceptions, we just react
                 # as follows: don't add the individual to our population because it's bad, just
                 # continue to the next iteration of the loop.
-                continue 
+                continue
             if evals % 1000 == 0: print(evals)
 
         # TODO may need to check on self.equation_ as it is used in .predict()
@@ -208,8 +220,12 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
         genome = genome.copy()
         idx = random.randrange(uc)
         gi = genome[idx]
+        iters = 0
         while genome[idx] == gi:
             genome[idx] = random.randrange(self.gram.production_lcm)
+            iters += 1
+            if iters == 1000:
+                print(f"DEBUG mutate_genome spinning: production_lcm={self.gram.production_lcm} gi={gi}", flush=True)
         return genome
 
     def xover_genome(self, uc0, g0, uc1, g1):
@@ -258,6 +274,9 @@ class EvoLengthPop:
         self.total_size = sum(self.sizes)
         self.inds = [[] for _ in range(maxlen + 1)]
 
+    def is_empty(self):
+        return all(len(cohort) == 0 for cohort in self.inds)
+
     def add(self, ind: Individual):
         # add <ind> to the data structure, according to logic already
         # described. return True if we actually add
@@ -285,8 +304,12 @@ class EvoLengthPop:
         cohort = random.choice(self.inds)
         # use a loop, because no guarantee the first cohort we pick
         # will be non-empty
-        while not len(cohort): 
+        iters = 0
+        while not len(cohort):
             cohort = random.choice(self.inds)
+            iters += 1
+            if iters == 1000:
+                print(f"DEBUG EvoLengthPop.random() spinning: all cohorts empty", flush=True)
         return random.choice(cohort)
 
     def simplify(self):
