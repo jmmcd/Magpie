@@ -42,7 +42,7 @@ def simplify(p, n_vars):
     zs = s.simplify()
     return str(zs)
 
-def optimise(ps, X, y):
+def optimise(ps, X, y, n_optimisations):
     """ Optimise the constants in ps to fit X, y.
     ps is a string, e.g. "C[0] * X[0]"
     X is a 2d numpy array, with shape (n_vars, n_samples)
@@ -80,12 +80,9 @@ def optimise(ps, X, y):
                          "max": "np.maximum", "min": "np.minimum"})
     p = eval("lambda X, *C: " + ps_np) # we need the np-version for optimisation, but return the version without np. prefix
     
-    # attempt to optimise constants
-    # try several random starting points from normal dist
-    # keep the best
-    best_cost = np.inf
-    best_popt = None
-    for _ in range(5):
+    best_popt = np.random.randn(n_consts)
+    best_cost = np.sum((p(X, *best_popt) - y) ** 2)
+    for _ in range(n_optimisations):
         try:
             C_init = np.random.randn(n_consts)
             popt, _ = curve_fit(p, X, y, p0=C_init)
@@ -95,8 +92,6 @@ def optimise(ps, X, y):
                 best_popt = popt
         except RuntimeError:
             continue
-    if best_popt is None:
-        raise FailedOptimisationError
     return best_popt, ps
 
 
@@ -116,7 +111,7 @@ def check_intervals(p, bounds):
         raise SingularityException
     return result
 
-def evaluate(ps, X_train, y_train, X_test=None, y_test=None, X_bounds=None):
+def evaluate(ps, X_train, y_train, X_test=None, y_test=None, X_bounds=None, n_optimisations=5):
     # X is in sklearn format, but we need it in transposed format,
     # because we will be using interval arithmetic and (later, Sympy
     # simplification) where it is natural to have a 1d array of
@@ -129,7 +124,7 @@ def evaluate(ps, X_train, y_train, X_test=None, y_test=None, X_bounds=None):
     # p is a function of X and C.
     # X can be 2d numpy array, or an array of intervals, or Sympy vars
 
-    newc, ps = optimise(ps, X, y)
+    newc, ps = optimise(ps, X, y, n_optimisations)
     fn_mappings = {"sin": np.sin, "log": np.log, "cos": np.cos,
                    "exp": np.exp, "sqrt": np.sqrt, "abs": np.abs,
                    "max": np.maximum, "min": np.minimum}
@@ -141,10 +136,12 @@ def evaluate(ps, X_train, y_train, X_test=None, y_test=None, X_bounds=None):
     replace_dict = {f"C[{i}]": f"{newc[i]:.4f}" for i in range(len(newc))}
     psc = replaceall(ps, replace_dict)
 
-    p_transpose = lambda X: newp(X.T) # p_transpose accepts sklearn format X
+    def p_transpose(X):
+        result = newp(X.T)
+        if np.isscalar(result):
+            result = np.ones(len(X)) * result
+        return result
     newpX = p_transpose(X_train)
-    if np.isscalar(newpX):
-        newpX = np.ones_like(y) * newpX
     cost = one_m_r2(newpX, y)
     # could raise a SingularityException
     if X_bounds is not None:
@@ -156,8 +153,6 @@ def evaluate(ps, X_train, y_train, X_test=None, y_test=None, X_bounds=None):
 
     if X_test is not None:
         newpX_test = p_transpose(X_test)
-        if np.isscalar(newpX_test):
-            newpX_test = np.ones_like(y_test) * newpX_test
         cost_test = one_m_r2(newpX_test, y_test)
     else:
         cost_test = None

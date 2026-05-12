@@ -62,7 +62,9 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
                  prop_consts=0.75, # n_consts relative to n_vars
                  X_bounds=None,
                  X_bounds_test_data=None,
-                 X_bounds_margin=0.0):
+                 X_bounds_margin=0.0,
+                 n_num_optimisations=5
+                 ):
         self.maxevals = maxevals
         self.initevals = initevals
         self.mutprob = mutprob
@@ -79,13 +81,14 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
         self.X_bounds = X_bounds
         self.X_bounds_test_data = X_bounds_test_data
         self.X_bounds_margin = X_bounds_margin
+        self.n_num_optimisations = n_num_optimisations
 
         assert initprob + mutprob <= 1.0
         assert initevals <= maxevals
 
     def fit(self, X, y=None):
 
-        assert y != None
+        assert y is not None
 
         n_vars = X.shape[1]
         # print('n_vars', n_vars)
@@ -188,7 +191,7 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
 
                 # evaluate, optimise, simplify
                 evals += 1
-                res = evaluate(ps, X_train, y_train, X_val, y_val, X_bounds)
+                res = evaluate(ps, X_train, y_train, X_val, y_val, X_bounds, self.n_num_optimisations)
                 if not(np.isfinite(res[0])) or (res[1] is not None and not np.isfinite(res[1])):
                     # nan or inf as train or val fitness
                     raise SingularityException
@@ -206,7 +209,7 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
                 
             except (InvalidIndividualException, DuplicateIndividualException) as e:
                 continue 
-            except (SingularityException, FailedOptimisationError, OverflowError,
+            except (SingularityException, OverflowError,
                     FloatingPointError, ZeroDivisionError) as e:
                 # we are not using protected operators, eg AQ. instead we use raw operators like
                 # division and log, and we catch exceptions here. We also check intervals using
