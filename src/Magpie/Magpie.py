@@ -140,7 +140,7 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
         # mutation. (it would be easy to add crossover also.)  the
         # philosophy of the method is: we keep only pretty good
         # individuals of each length (call this a cohort). we select
-        # randomly (selection is not biased by fitness). but the new
+        # uniformly (selection is not biased by fitness). but the new
         # offspring is added to the population structure only if it's
         # good (so replacement is controlled by fitness).
         
@@ -201,7 +201,7 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
                 
                 # create Individual and store in the pop structure
                 individual = Individual.from_evaluation(used_codons, g, res)
-                if pop.add(individual):
+                if pop.try_add(individual):
                     pass 
                     #print(f"evals {evals} / {self.maxevals}")
                     #print(pop) # print pop only if there was a change
@@ -214,7 +214,7 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
                 # we are not using protected operators, eg AQ. instead we use raw operators like
                 # division and log, and we catch exceptions here. We also check intervals using
                 # Interval bounds-checking. For any of these "expected" exceptions, we just react
-                # as follows: don't add the individual to our population because it's bad, just
+                # as follows: don't try_add the individual to our population because it's bad, just
                 # continue to the next iteration of the loop.
                 continue
             if evals % 1000 == 0: print(evals)
@@ -268,7 +268,7 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
 class EvoLengthPop:
     """The population data structure. It consists of cohorts, one for each
     integer length L, from 0 up to maxlen. Eg maxlen=30. A cohort is a
-    list of individuals of good individuals of length L. When we add
+    list of individuals of good individuals of length L. When we try_add
     an individual of length L to the population, it's checked against
     cohort L. If it's better than any individual in the cohort, it
     replaces that individual.
@@ -289,7 +289,7 @@ class EvoLengthPop:
     def is_empty(self):
         return all(len(cohort) == 0 for cohort in self.inds)
 
-    def add(self, ind: Individual):
+    def try_add(self, ind: Individual):
         # add <ind> to the data structure, according to logic already
         # described. return True if we actually add
         L = ind.used_codons
