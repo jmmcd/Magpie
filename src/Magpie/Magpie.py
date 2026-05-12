@@ -246,10 +246,12 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
         return genome
 
     def xover_genome(self, uc0, g0, uc1, g1):
-        g0 = g0.copy()
-        # TODO investigate use of uc (used_codons) here
-        idx0 = random.randrange(len(g0) - 2)
-        idx1 = random.randrange(idx0, len(g0))
+        g0 = g0.copy() # we only change g0 and only return 1 new genome
+        active = uc0
+        if active < 2:
+            return g0
+        idx0 = random.randrange(active - 1)
+        idx1 = random.randrange(idx0 + 1, active + 1)
         g0[idx0:idx1] = g1[idx0:idx1]
         return g0
     
