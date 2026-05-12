@@ -251,7 +251,7 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
         if active < 2:
             return g0
         idx0 = random.randrange(active - 1)
-        idx1 = random.randrange(idx0 + 1, active + 1)
+        idx1 = random.randrange(idx0 + 1, len(g0) + 1) # typically the 'tail' of g0 is retained
         g0[idx0:idx1] = g1[idx0:idx1]
         return g0
     
