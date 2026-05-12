@@ -160,6 +160,9 @@ def evaluate(ps, X_train, y_train, X_test=None, y_test=None, X_bounds=None, n_op
         cost_test = one_m_r2(newpX_test, y_test)
     else:
         cost_test = cost
-    
-    # use a.atoms() to get a count of all symbols
-    return cost, cost_test, ps, psc, p, newc, newp, p_transpose
+
+    import re
+    n_vars_used = len(set(re.findall(r'X\[(\d+)\]', ps)))
+    n_consts_used = len(newc)
+
+    return cost, cost_test, ps, psc, p, newc, newp, p_transpose, n_vars_used, n_consts_used

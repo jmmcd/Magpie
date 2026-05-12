@@ -28,13 +28,15 @@ class Individual:
     equation_fn_with_consts: Callable  # newp - function with constants built in
     equation_fn_transpose: Callable  # p_transpose - function that accepts sklearn format X
     genome: np.ndarray
+    n_vars_used: Optional[int] = None
+    n_consts_used: Optional[int] = None
     latex: Optional[str] = None
-    
-    
+
+
     @classmethod
     def from_evaluation(cls, used_codons: int, genome: np.ndarray, eval_result: tuple):
         """Create Individual from evaluation result."""
-        cost, cost_test, ps, psc, p, newc, newp, p_transpose = eval_result
+        cost, cost_test, ps, psc, p, newc, newp, p_transpose, n_vars_used, n_consts_used = eval_result
         return cls(
             used_codons=used_codons,
             train_loss=cost,
@@ -45,7 +47,9 @@ class Individual:
             optimized_consts=newc,
             equation_fn_with_consts=newp,
             equation_fn_transpose=p_transpose,
-            genome=genome.copy()
+            genome=genome.copy(),
+            n_vars_used=n_vars_used,
+            n_consts_used=n_consts_used
         )
 
 class MagpieRegressor(BaseEstimator, RegressorMixin):
@@ -188,7 +192,7 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
                 if ps in f_cache:
                     raise DuplicateIndividualException
                 # store ps, because we have seen it. We should never revisit the same in future
-                f_cache[ps] = used_codons, None, None, None, None, None, None
+                f_cache[ps] = used_codons, None, None, None, None, None, None, None, None, None
 
                 # evaluate, optimise, simplify
                 evals += 1
@@ -363,19 +367,22 @@ class EvoLengthPop:
                 eqn.equation_str, eqn.equation_with_consts,
                 eqn.equation_fn, eqn.optimized_consts,
                 eqn.equation_fn_with_consts, eqn.equation_fn_transpose,
-                eqn.genome, eqn.latex
+                eqn.genome, eqn.latex,
+                eqn.n_vars_used, eqn.n_consts_used
             ])
-        
+
         best_data = [[
             best.used_codons, best.train_loss, best.validation_loss,
             best.equation_str, best.equation_with_consts,
             best.equation_fn, best.optimized_consts,
             best.equation_fn_with_consts, best.equation_fn_transpose,
-            best.genome, best.latex
+            best.genome, best.latex,
+            best.n_vars_used, best.n_consts_used
         ]]
-        
-        columns = ['size', 'loss', 'loss_validation', 'equation_no_consts', 'equation', 
-                   'equation_fn', 'consts_for_equation_fn_no_consts', 'equation_fn_transpose_no_consts', 'equation_fn_transpose', 'genome', 'latex']
+
+        columns = ['size', 'loss', 'loss_validation', 'equation_no_consts', 'equation',
+                   'equation_fn', 'consts_for_equation_fn_no_consts', 'equation_fn_transpose_no_consts', 'equation_fn_transpose', 'genome', 'latex',
+                   'n_vars_used', 'n_consts_used']
         
         eqns = pd.DataFrame(eqn_data, columns=columns)
         best = pd.DataFrame(best_data, columns=columns)
