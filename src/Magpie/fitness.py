@@ -68,7 +68,9 @@ def optimise(ps, X, y):
     
     ps = replaceall(ps, replace_dict)
     ps_np = replaceall(ps, {"sin": "np.sin", "cos": "np.cos",
-                         "log": "np.log", "sqrt": "np.sqrt"})
+                         "log": "np.log", "sqrt": "np.sqrt",
+                         "exp": "np.exp", "abs": "np.abs",
+                         "max": "np.maximum", "min": "np.minimum"})
     p = eval("lambda X, *C: " + ps_np) # we need the np-version for optimisation, but return the version without np. prefix
     
     # attempt to optimise constants
@@ -104,7 +106,7 @@ def check_intervals(p, bounds):
 
 def evaluate(ps, X_train, y_train, X_test=None, y_test=None, X_bounds=None):
     # X is in sklearn format, but we need it in transposed format,
-    # because we will be using Interval and (later, Sympy
+    # because we will be using interval arithmetic and (later, Sympy
     # simplification) where it is natural to have a 1d array of
     # intervals. So, transpose here.
     X = X_train
@@ -116,8 +118,9 @@ def evaluate(ps, X_train, y_train, X_test=None, y_test=None, X_bounds=None):
     # X can be 2d numpy array, or an array of intervals, or Sympy vars
 
     newc, ps = optimise(ps, X, y)
-    fn_mappings = {"sin": np.sin, "log": np.log,
-                   "cos": np.cos, "exp": np.exp} # TODO there could be more to add here
+    fn_mappings = {"sin": np.sin, "log": np.log, "cos": np.cos,
+                   "exp": np.exp, "sqrt": np.sqrt, "abs": np.abs,
+                   "max": np.maximum, "min": np.minimum}
     p = eval("lambda X, C: " + ps, fn_mappings)
     newp = lambda X: p(X, newc)
     # newp: p with consts built in

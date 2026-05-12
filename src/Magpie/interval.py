@@ -18,12 +18,41 @@ containing inf, we raise SingularityException to reject the individual.
 """
 
 
+def _bounds(x):
+    """Return (lo, hi) of a pyinterval interval or scalar."""
+    if isinstance(x, interval):
+        return min(c[0] for c in x), max(c[1] for c in x)
+    v = float(x)
+    return v, v
+
+def interval_abs(x):
+    lo, hi = _bounds(x)
+    if lo >= 0:
+        return interval([lo, hi])
+    elif hi <= 0:
+        return interval([-hi, -lo])
+    else:
+        return interval([0.0, max(-lo, hi)])
+
+def interval_max(x, y):
+    xl, xh = _bounds(x)
+    yl, yh = _bounds(y)
+    return interval([max(xl, yl), max(xh, yh)])
+
+def interval_min(x, y):
+    xl, xh = _bounds(x)
+    yl, yh = _bounds(y)
+    return interval([min(xl, yl), min(xh, yh)])
+
 iv_fn_mappings = {
     "sin": imath.sin,
     "cos": imath.cos,
     "log": imath.log,
     "sqrt": imath.sqrt,
     "exp": imath.exp,
+    "abs": interval_abs,
+    "max": interval_max,
+    "min": interval_min,
 }
 
 
