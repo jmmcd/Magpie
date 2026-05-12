@@ -116,7 +116,7 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
         elif self.X_bounds == "test":
             assert self.X_bounds_test_data is not None, \
                 "X_bounds_test_data must be provided when X_bounds='test'"
-            X_bounds = generate_bounds(self.X_bounds_test_data, self.X_bounds_margin)
+            X_bounds = generate_bounds(np.vstack([X_train, self.X_bounds_test_data]), self.X_bounds_margin)
         else:
             assert len(self.X_bounds) == n_vars
             X_bounds = self.X_bounds
