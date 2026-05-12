@@ -1,5 +1,6 @@
 import numpy as np
-from scipy.optimize import curve_fit
+from scipy.optimize import curve_fit, OptimizeWarning
+import warnings
 from .exceptions import *
 from .interval import iv_fn_mappings
 # import sympy
@@ -85,7 +86,10 @@ def optimise(ps, X, y, n_optimisations):
     for _ in range(n_optimisations):
         try:
             C_init = np.random.randn(n_consts)
-            popt, _ = curve_fit(p, X, y, p0=C_init)
+            # inside the loop:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", OptimizeWarning)
+                popt, _ = curve_fit(p, X, y, p0=C_init)
             cost = np.sum((p(X, *popt) - y) ** 2)
             if cost < best_cost:
                 best_cost = cost
@@ -155,7 +159,7 @@ def evaluate(ps, X_train, y_train, X_test=None, y_test=None, X_bounds=None, n_op
         newpX_test = p_transpose(X_test)
         cost_test = one_m_r2(newpX_test, y_test)
     else:
-        cost_test = None
+        cost_test = cost
     
     # use a.atoms() to get a count of all symbols
     return cost, cost_test, ps, psc, p, newc, newp, p_transpose
