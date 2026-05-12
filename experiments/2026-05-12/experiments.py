@@ -1,4 +1,4 @@
-import os
+import os, sys
 from datetime import datetime
 from pathlib import Path
 import random
@@ -87,22 +87,34 @@ def run_model(model, rep, X_train, X_test, y_train, y_test):
 # * Magpie we want to investigate hyperparameters, so `n_reps` runs per dataset per hyperparameter config.
 # Every run gives a row which we put in a Pandas DataFrame.
 
-budget = 250
-nreps = 5
+budget = 25000
+nreps = 3 # 10 datasets x 3 reps is plenty.
 param_grid = {
-    'maxgenomelen': [20, 35, 50],
-    #'maxcohortlen': [5, 10, 15],
-    #'X_bounds': ['test'], # ['none', 'train', 'test'],
-    #'gramfile': ['symbolic_regression.bnf',
-    #             'symbolic_regression_sqrt_log_exp_abs.bnf'],
+    'maxgenomelen': [30, 50],
+    'maxcohortlen': [8, 15],
+    'X_bounds': ['none', 'train', 'test'],
+    'gramfile': ['symbolic_regression.bnf',
+                 'symbolic_regression_sqrt_log_exp_abs.bnf'],
     #'prop_consts': [0.5, 0.75, 1.0],
-    #'valsize': [0.0, 0.25, 0.5],
-    'initevals': [10, 30, 80],
-    'mutprob': [0.2, 0.6, 1.0],
-    #'n_num_optimisations': [0, 2, 5],
+    'valsize': [0.0, 0.25],
+    #'initevals': [10, 30, 80],
+    'mutprob': [0.6, 1.0],
+    'n_num_optimisations': [0, 3],
     #'X_bounds_margin': [0.05]
 }
+def count_grid(g):
+    result = 1
+    for k in g:
+        result *= len(g[k])
+    return result
+est_time_per_ind = 100 / 25000 # in seconds, estimated from some typical runs of 25000 individuals which took 100s
+ncores = 7
+print(f"we will run {count_grid(param_grid)} configurations")
+print(f"with {nreps} nreps, {len(srbench_datasets)} datasets, and budget {budget}")
+print(f"we have {ncores} cores")
+print(f"estimate: {nreps * count_grid(param_grid) * len(srbench_datasets) * budget * est_time_per_ind / (ncores * 60)} minutes")
 param_keys = list(param_grid.keys())
+sys.exit()
 
 import json
 with open(f"param_grid_{datetime.now().strftime('%Y_%m_%d_%H%M')}.json", "w") as f:
