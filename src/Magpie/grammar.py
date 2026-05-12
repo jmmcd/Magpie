@@ -58,7 +58,7 @@ class Grammar(object):
                     tmp_productions = []
 
                     if productions.strip().startswith("GE_RANGE:"):
-                        # Special case: for GE_RANGE:nvars, substitute
+                        # Special case: for something like GE_RANGE:nvars, substitute
                         # 0 | 1 | ... | 9 (assuming nvars=10)
                         varname = productions.strip().split(":")[1]
                         assert varname in kwargs

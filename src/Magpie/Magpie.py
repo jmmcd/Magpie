@@ -59,6 +59,7 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
                  gramfile="symbolic_regression.bnf",
                  valsize=0.2,
                  initprob=0.0,
+                 prop_consts=0.75, # n_consts relative to n_vars
                  X_bounds=None,
                  X_bounds_test_data=None,
                  X_bounds_margin=0.0):
@@ -74,7 +75,7 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
             from importlib.resources import files
             self.gramfile = str(files(__package__) / 'grammars' / gramfile)
         self.valsize = valsize
-        self.n_consts = self.maxgenomelen // 2
+        self.prop_consts = prop_consts
         self.X_bounds = X_bounds
         self.X_bounds_test_data = X_bounds_test_data
         self.X_bounds_margin = X_bounds_margin
@@ -84,8 +85,11 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
 
     def fit(self, X, y=None):
 
+        assert y != None
+
         n_vars = X.shape[1]
-        print('n_vars', n_vars)
+        # print('n_vars', n_vars)
+        self.n_consts = int(n_vars * self.prop_consts)
         self.gram = Grammar(self.gramfile, n_vars=n_vars, n_consts=self.n_consts)
         try:
             self.column_names_in_ = X.columns

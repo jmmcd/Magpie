@@ -1,6 +1,6 @@
 <expr> ::= (<expr> <bop> <expr>) | <uop>(<expr>) | <var> | <const>
 <bop> ::= + | - | * | /
-<uop> ::= sqrt
+<uop> ::= log | sqrt | exp | abs
 <var> ::= X[<varidx>]
 <const> ::= C[<constidx>]
 <varidx> ::= GE_RANGE:n_vars
