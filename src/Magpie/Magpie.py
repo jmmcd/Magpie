@@ -57,9 +57,11 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
                  maxgenomelen=30, 
                  maxcohortlen=7,
                  gramfile="symbolic_regression.bnf",
-                 valsize=0.2, 
+                 valsize=0.2,
                  initprob=0.0,
-                 X_bounds=None):
+                 X_bounds=None,
+                 X_bounds_test_data=None,
+                 X_bounds_margin=0.0):
         self.maxevals = maxevals
         self.initevals = initevals
         self.mutprob = mutprob
@@ -74,6 +76,8 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
         self.valsize = valsize
         self.n_consts = self.maxgenomelen // 2
         self.X_bounds = X_bounds
+        self.X_bounds_test_data = X_bounds_test_data
+        self.X_bounds_margin = X_bounds_margin
 
         assert initprob + mutprob <= 1.0
         assert initevals <= maxevals
@@ -101,12 +105,13 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
         
         if self.X_bounds is None:
             X_bounds = None
-        elif type(self.X_bounds) == float:
-            assert 0.0 <= self.X_bounds <= 1.0
-            X_bounds = generate_bounds(X_train, self.X_bounds)
+        elif self.X_bounds == "train":
+            X_bounds = generate_bounds(X_train, self.X_bounds_margin)
+        elif self.X_bounds == "test":
+            assert self.X_bounds_test_data is not None, \
+                "X_bounds_test_data must be provided when X_bounds='test'"
+            X_bounds = generate_bounds(self.X_bounds_test_data, self.X_bounds_margin)
         else:
-            print(len(self.X_bounds))
-            print(self.X_bounds)
             assert len(self.X_bounds) == n_vars
             X_bounds = self.X_bounds
 
