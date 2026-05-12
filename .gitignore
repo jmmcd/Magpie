@@ -9,6 +9,9 @@ __pycache__/
 # log files from runs
 examples/outputs/
 
+# pmlb data cache
+data/
+
 # VS Code
 .vscode/
 
