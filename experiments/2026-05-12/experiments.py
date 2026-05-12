@@ -112,7 +112,7 @@ ncores = 7
 print(f"we will run {count_grid(param_grid)} configurations")
 print(f"with {nreps} nreps, {len(srbench_datasets)} datasets, and budget {budget}")
 print(f"we have {ncores} cores")
-print(f"estimate: {nreps * count_grid(param_grid) * len(srbench_datasets) * budget * est_time_per_ind / (ncores * 60)} minutes")
+print(f"estimate: {nreps * count_grid(param_grid) * len(srbench_datasets) * budget * est_time_per_ind / (ncores * 60 * 60)} hours")
 param_keys = list(param_grid.keys())
 sys.exit()
 
