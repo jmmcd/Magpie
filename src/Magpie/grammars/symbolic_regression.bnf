@@ -1,5 +1,5 @@
 <expr> ::= (<expr> <bop> <expr>) | <uop>(<expr>) | <var> | <const>
-<bop> ::= + | - | * | / | **
+<bop> ::= + | - | * | /
 <uop> ::= log
 <var> ::= X[<varidx>]
 <const> ::= C[0] | C[1] | C[2] | C[3] | C[4] | C[5]

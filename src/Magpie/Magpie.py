@@ -13,7 +13,7 @@ from sklearn.base import BaseEstimator, RegressorMixin
 from .grammar import Grammar, derive_string
 from .exceptions import *
 from .fitness import evaluate, one_m_r2, latex_eqn
-from .interval import Interval, generate_bounds
+from .interval import generate_bounds
 from .pareto import is_pareto_efficient
 
 @dataclass

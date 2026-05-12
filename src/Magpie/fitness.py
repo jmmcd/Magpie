@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.optimize import curve_fit
 from .exceptions import *
-from .interval import Interval
+from .interval import iv_fn_mappings
 # import sympy
 
 
@@ -92,10 +92,15 @@ def optimise(ps, X, y):
 
 
 def check_intervals(p, bounds):
-    # calculate p(bounds). we can return the result but it doesn't
-    # matter too much. the point is that if there are any singularities,
-    # an exception will be raised during this
-    return p(bounds)
+    from interval import interval
+    import math
+    result = p(bounds)
+    if isinstance(result, interval):
+        if not all(math.isfinite(c[0]) and math.isfinite(c[1]) for c in result):
+            raise SingularityException
+    elif not math.isfinite(float(result)):
+        raise SingularityException
+    return result
 
 def evaluate(ps, X_train, y_train, X_test=None, y_test=None, X_bounds=None):
     # X is in sklearn format, but we need it in transposed format,
@@ -128,7 +133,9 @@ def evaluate(ps, X_train, y_train, X_test=None, y_test=None, X_bounds=None):
     cost = one_m_r2(newpX, y)
     # could raise a SingularityException
     if X_bounds is not None:
-        check_intervals(newp, X_bounds)
+        p_iv = eval("lambda X, C: " + ps, dict(iv_fn_mappings))
+        newp_iv = lambda X: p_iv(X, newc)
+        check_intervals(newp_iv, X_bounds)
     # p_simp = simplify(newp, n_vars)
 
     if X_test is not None:
