@@ -35,6 +35,13 @@ def latex_eqn(ps, varnames):
     s = sympy.latex(ps)
     return s
 
+def simplify(p, n_vars):
+    X = sympy.symbols(f"X:{n_vars}")
+    C = sympy.symbols(f"C:{n_vars}")
+    s = p(X, C)
+    zs = s.simplify()
+    return str(zs)
+
 def optimise(ps, X, y):
     """ Optimise the constants in ps to fit X, y.
     ps is a string, e.g. "C[0] * X[0]"
@@ -139,7 +146,7 @@ def evaluate(ps, X_train, y_train, X_test=None, y_test=None, X_bounds=None):
         p_iv = eval("lambda X, C: " + ps, dict(iv_fn_mappings))
         newp_iv = lambda X: p_iv(X, newc)
         check_intervals(newp_iv, X_bounds)
-    # p_simp = simplify(newp, n_vars)
+    # p_simp = simplify(newp, n_vars) # not used - needs work TODO
 
     if X_test is not None:
         newpX_test = p_transpose(X_test)

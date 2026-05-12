@@ -310,19 +310,7 @@ class EvoLengthPop:
             iters += 1
             if iters == 1000:
                 print(f"DEBUG EvoLengthPop.random() spinning: all cohorts empty", flush=True)
-        return random.choice(cohort)
-
-    def simplify(self):
-        # TODO: try sympy for simplification. currently not used.
-        ps_simplified = simplify(p, n_vars)
-        p_simplified = eval("lambda X, C: " + ps_simplified)
-        def simplify(p, n_vars):
-            X = sympy.symbols(f"X:{n_vars}")
-            C = sympy.symbols(f"C:{n_vars}")
-            s = p(X, C)
-            zs = s.simplify()
-            return str(zs)
-        
+        return random.choice(cohort)        
 
     def extract_best_eqns(self, colnames):
         # take the Pareto Front based on validation cost
