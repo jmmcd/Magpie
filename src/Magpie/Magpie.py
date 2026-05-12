@@ -50,7 +50,7 @@ class Individual:
 
 class MagpieRegressor(BaseEstimator, RegressorMixin):
     def __init__(self,
-                 maxevals=20000, 
+                 maxevals=25000, 
                  initevals=3000, 
                  mutprob=0.8,
                  maxgenomelen=30, 
@@ -59,9 +59,9 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
                  valsize=0.2,
                  initprob=0.0,
                  prop_consts=0.75, # n_consts relative to n_vars
-                 X_bounds=None,
+                 X_bounds='none',
                  X_bounds_test_data=None,
-                 X_bounds_margin=0.0,
+                 X_bounds_margin=0.05,
                  n_num_optimisations=5
                  ):
         self.maxevals = maxevals
@@ -109,7 +109,9 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
             X_train, X_val, y_train, y_val = \
                 X, None, y, None
         
-        if self.X_bounds is None:
+        self.y_train_mean_ = np.mean(y_train)
+
+        if self.X_bounds == "none":
             X_bounds = None
         elif self.X_bounds == "train":
             X_bounds = generate_bounds(X_train, self.X_bounds_margin)
@@ -216,7 +218,7 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
                 # as follows: don't try_add the individual to our population because it's bad, just
                 # continue to the next iteration of the loop.
                 continue
-            if evals % 1000 == 0: print(evals)
+            # if evals % 1000 == 0: print(evals)
 
         # TODO may need to check on self.equation_ as it is used in .predict()
         # is it ok to store self.equation_ as a df?
@@ -258,11 +260,14 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
         # access the equation in the right format
         # self.equation_ is a DataFrame of 1 row so we can use .at[0, "equation_fn_transpose"] to get the function
         # TODO: confirm we are using the right element of self.equation_
-        with np.errstate(all='warn'):  # or all='ignore'
+        with np.errstate(all='raise'):
             try:
-                return self.equation_.at[0, "equation_fn_transpose"](X)
+                result = self.equation_.at[0, "equation_fn_transpose"](X)
+                if not np.all(np.isfinite(result)):
+                    return np.full(len(X), self.y_train_mean_)
+                return result
             except:
-                return np.full(len(X), 0) # just predict 0 for everything
+                return np.full(len(X), self.y_train_mean_)
 
 class EvoLengthPop:
     """The population data structure. It consists of cohorts, one for each

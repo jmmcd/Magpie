@@ -60,5 +60,6 @@ def generate_bounds(X, moe=0.0):
     # moe = margin of error, eg 0.05 for a 5% margin of error
     bounds = []
     for lb, ub in zip(np.min(X, axis=0), np.max(X, axis=0)):
-        bounds.append(interval([lb * (1 - moe), ub * (1 + moe)]))
+        margin = moe * (ub - lb)
+        bounds.append(interval([lb - margin, ub + margin]))
     return bounds  # plain list, not np.array: numpy would flatten interval objects into a float array
