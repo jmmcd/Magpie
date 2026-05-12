@@ -61,4 +61,4 @@ def generate_bounds(X, moe=0.0):
     bounds = []
     for lb, ub in zip(np.min(X, axis=0), np.max(X, axis=0)):
         bounds.append(interval([lb * (1 - moe), ub * (1 + moe)]))
-    return np.array(bounds)
+    return bounds  # plain list, not np.array: numpy would flatten interval objects into a float array

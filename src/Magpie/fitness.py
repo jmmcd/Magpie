@@ -103,11 +103,16 @@ def optimise(ps, X, y):
 def check_intervals(p, bounds):
     from interval import interval
     import math
-    result = p(bounds)
+    try:
+        result = p(bounds)
+    except (ValueError, ZeroDivisionError):
+        # imath raises ValueError when the interval is entirely outside the
+        # function's domain (e.g. log of a negative interval) — that's a singularity
+        raise SingularityException
     if isinstance(result, interval):
         if not all(math.isfinite(c[0]) and math.isfinite(c[1]) for c in result):
             raise SingularityException
-    elif not math.isfinite(float(result)):
+    elif not np.all(np.isfinite(result)):  # np.isfinite handles scalars and arrays; float() would fail on arrays
         raise SingularityException
     return result
 
@@ -144,7 +149,8 @@ def evaluate(ps, X_train, y_train, X_test=None, y_test=None, X_bounds=None):
     # could raise a SingularityException
     if X_bounds is not None:
         p_iv = eval("lambda X, C: " + ps, dict(iv_fn_mappings))
-        newp_iv = lambda X: p_iv(X, newc)
+        newc_py = [float(c) for c in newc]  # plain floats so numpy doesn't hijack interval arithmetic
+        newp_iv = lambda X: p_iv(X, newc_py)
         check_intervals(newp_iv, X_bounds)
     # p_simp = simplify(newp, n_vars) # not used - needs work TODO
 
@@ -158,10 +164,3 @@ def evaluate(ps, X_train, y_train, X_test=None, y_test=None, X_bounds=None):
     
     # use a.atoms() to get a count of all symbols
     return cost, cost_test, ps, psc, p, newc, newp, p_transpose
-
-
-
-
-
-
-
