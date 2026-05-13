@@ -227,6 +227,8 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
 
         # TODO may need to check on self.equation_ as it is used in .predict()
         # is it ok to store self.equation_ as a df?
+        # null_model_loss = np.var(y_val) if y_val is not None else np.var(y_train)
+        # self.equations_, self.equation_, self.hypervolume_ = pop.extract_best_eqns(self.column_names_in_, null_model_loss)
         self.equations_, self.equation_ = pop.extract_best_eqns(self.column_names_in_)
         return self
 
@@ -335,7 +337,7 @@ class EvoLengthPop:
                 print(f"DEBUG EvoLengthPop.random() spinning: all cohorts empty", flush=True)
         return random.choice(cohort)        
 
-    def extract_best_eqns(self, colnames):
+    def extract_best_eqns(self, colnames): # , null_model_loss
         # take the Pareto Front based on validation cost
         # TODO use simplify to return nicer-looking equations.
         eqns, best = [], None
@@ -389,9 +391,27 @@ class EvoLengthPop:
         
         eqns = pd.DataFrame(eqn_data, columns=columns)
         best = pd.DataFrame(best_data, columns=columns)
-        #print("Best equation:")
-        #print(best)
+
         return eqns, best
+    
+        # below is implementation of hypervolume, unused for now
+        
+        # # 2D hypervolume: staircase area dominated by the Pareto front
+        # # reference point uses null model loss (variance of y_val) and max possible complexity
+        # # front is already sorted by complexity ascending (cohort iteration order)
+        # ref_x = self.sizes[-1] + 1
+        # ref_y = null_model_loss
+        # hv_points = [(row[0], row[2]) for row in eqn_data]  # (used_codons, validation_loss or None)
+        # # fall back to train_loss if validation_loss is None (valsize=0)
+        # if any(y is None for _, y in hv_points):
+        #     hv_points = [(row[0], row[1]) for row in eqn_data]  # (used_codons, train_loss)
+        # hypervolume = sum(
+        #     ((hv_points[i+1][0] if i+1 < len(hv_points) else ref_x) - hv_points[i][0])
+        #     * (ref_y - hv_points[i][1])
+        #     for i in range(len(hv_points))
+        # )
+
+        # return eqns, best, hypervolume
 
     def __str__(self): # redo this or remove 
         s = "L trainfit valfit eqn\n"
