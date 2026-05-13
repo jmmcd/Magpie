@@ -6,3 +6,6 @@ sympy
 crlibm
 pyinterval
 scipy
+#pmlb
+#pysr
+#ffx
