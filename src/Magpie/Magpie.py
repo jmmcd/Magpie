@@ -12,7 +12,7 @@ from sklearn.base import BaseEstimator, RegressorMixin
 
 from .grammar import Grammar, derive_string
 from .exceptions import *
-from .fitness import evaluate, one_m_r2, latex_eqn
+from .fitness import evaluate, one_m_r2, latex_eqn, sympy_canonicalize
 from .interval import generate_bounds
 
 @dataclass
@@ -187,8 +187,9 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
             try:
                 # make phenotype and check if valid and non-duplicate
                 ps, used_codons = derive_string(self.gram, g)
-                if ps is None: 
+                if ps is None:
                     raise InvalidIndividualException
+                # ps = sympy_canonicalize(ps) # needs testing
                 if ps in f_cache:
                     raise DuplicateIndividualException
                 # store ps, because we have seen it. We should never revisit the same in future

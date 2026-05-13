@@ -1,9 +1,53 @@
 import numpy as np
 from scipy.optimize import curve_fit, OptimizeWarning
+import re
 import warnings
 from .exceptions import *
 from .interval import iv_fn_mappings
-# import sympy
+
+
+# currently unused, not really tested yet
+def sympy_canonicalize(ps):
+    """Simplify ps with SymPy and rename constants by first appearance.
+
+    Returns a canonical string suitable for duplicate detection.
+    Falls back to the original ps if SymPy fails.
+    """
+    import sympy
+
+    # C[i] and X[i] aren't valid SymPy symbol names; replace with C_i / X_i
+    s = re.sub(r'C\[(\d+)\]', r'C_\1', ps)
+    s = re.sub(r'X\[(\d+)\]', r'X_\1', s)
+    s = s.replace('abs', 'Abs')  # SymPy uses Abs
+
+    try:
+        expr = sympy.sympify(s)
+        expr = sympy.simplify(expr)
+        s = str(expr)
+        # Bail out if SymPy introduced non-Python tokens
+        if any(tok in s for tok in ('oo', ' I', 'zoo', 'nan')):
+            return ps
+    except Exception:
+        return ps
+
+    # Rename constants in order of first appearance (left-to-right scan)
+    seen = {}
+    counter = [0]
+
+    def _relabel(m):
+        old = m.group(1)
+        if old not in seen:
+            seen[old] = counter[0]
+            counter[0] += 1
+        return f'C_{seen[old]}'
+
+    s = re.sub(r'C_(\d+)', _relabel, s)
+
+    # Convert back to C[i] / X[i] notation and restore abs
+    s = re.sub(r'C_(\d+)', r'C[\1]', s)
+    s = re.sub(r'X_(\d+)', r'X[\1]', s)
+    s = s.replace('Abs', 'abs')
+    return s
 
 
 def rmse(a, b): # RMSE. cost function to be minimised.
