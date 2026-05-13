@@ -4,11 +4,7 @@
 
 * We could have a Pareto front within each bin, seeing the test cases as objectives. Or a many-objective approach such as lexicase selection.
 
-* One main idea in GP in recent years is lexicase selection, or epsilon-lexicase in the case of regression. How can we incorporate this?
-Perhaps each cohort is actually unlimited in size, but every selection
-is just a lexicase selection within a randomly-chosen cohort. Perhaps
-we sometimes discard ones which have not been selected for a long time,
-if we wish to save memory.
+* One main idea in GP in recent years is lexicase selection, or epsilon-lexicase in the case of regression. How can we incorporate this? Perhaps each cohort is actually unlimited in size, but every selection is just a lexicase selection within a randomly-chosen cohort. Perhaps we sometimes discard ones which have not been selected for a long time, if we wish to save memory.
 
 * We have a limit on individual size. 
 A possible concern is that this maximum size might limit
@@ -34,7 +30,8 @@ all cohorts dominated by x[10] + something.
 incorporated. Worm & Chiu reduce each tree to a canonical form, eg
 both x0 + c0 and c0 + x0 are really the same. By reducing to a
 canonical form, we can identify further effective duplicates and
-avoid evaluating them. Sympy can do this. 
+avoid evaluating them. Rockett showed that simplification at the end helps more
+than during, I think. Sympy can do this. DONE but not tested yet
 
 * Other pointless formulae should also be identified and discarded before
 evaluation, eg log(c0). TODO.
@@ -42,9 +39,6 @@ evaluation, eg log(c0). TODO.
 * PySR (Cramner) incorporates special complexity penalties which
 prevent non-idiomatic functions such as sin(sin(sin(x0))). ITEA (Olivetti) achieved similar in a different way. TODO.
 
-* Sympy could also be used to simplify formulae before
-evaluation. Rockett showed that simplification at the end helps more
-than during. TODO.
 
 * Rockett investigated both optimisation of constants during a run,
 and after a run, and did not find a large advantage in favour of
@@ -65,16 +59,9 @@ with one hyperparameter. This assumes we have plenty of RAM to store every indiv
 
 * TODO: compare against PySR (Done), FFX (Done), PyOperon, QD-GP or MAP-Elites GP
 
-* TODO: Use GE_RANGE for consts as well as for vars:
+* TODO: Set column_names_in_ carefully, generate x0 etc where needed, use varnames (add 'x' if starts with a number, replace everything with alphanumeric)
 
-```
-<constidx> ::= GE_RANGE:n_consts
-C[<constidx>]
-```
-
-*TODO: Set column_names_in_ carefully, generate x0 etc where needed, use varnames (add 'x' if starts with a number, replace everything with alphanumeric)
-
-* TODO: export final equations to a csv, to sympy, and to latex (and simplify/beautify them) compatible with PySR. Some this is DONE
+* TODO: export final equations to a csv, to sympy, and to latex (and simplify/beautify them) compatible with PySR. Some of this is DONE
 
 * TODO: Sensitivity analysis. One approach would be, apply a 95%, 90% confidence bound on each variable using interval, ie x0 = [0.5, 0.7], and see what are the possible outputs of the model. Another approach: for each variable, choose the *mean* for every other variable, and vary this variable from min to max of its range, to see the effect on the output. Another approach: for each training point, for each variable x (holding others constant), calculate f(x) - f(x - 1SD) and calculate f(x + 1SD) - f(x), that is calculate the effect of a 1SD increase, but in two scenarios. If either x - 1SD or x + 1SD goes outside the range of y, consider discarding it? Maybe use 0.1 SD instead. Then for each variable, we can see the distribution of the effect on f of a 1 SD increase in x. Maybe this distribution tells us something interesting about f. If it includes both pos and neg, does that tell us the model is non-linear in a useful way?
 
@@ -84,7 +71,12 @@ C[<constidx>]
 
 * How to visualise a large factorial experiment? 
 
-* Need to rethink validation data for constant optimisation and for model selection 
+* Need to rethink validation data for constant optimisation and for model selection. Maybe it is ok, but maybe re-unify
+them for hypervolume calculation? Maybe use *both* for model selection?
+
+* Have implemented hypervolumen and simplification but need to test both.
+
+* Consider changing to MSE or R^2 instead of ugly 1-R^2.
 
 * We should seed the initial population with some fitted equations:
   * Constant
