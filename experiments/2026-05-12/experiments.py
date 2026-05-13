@@ -168,7 +168,7 @@ all_tasks = [
 pending_tasks = [t for t in all_tasks if task_key(*t) not in done]
 print(f"{len(done)} tasks already complete, {len(pending_tasks)} remaining")
 
-for r in Parallel(n_jobs=7, return_as='generator_unordered')(
+for r in Parallel(n_jobs=ncores, return_as='generator_unordered')(
     delayed(run_single)(datasetname, rep, params)
     for datasetname, rep, params in pending_tasks
 ):
