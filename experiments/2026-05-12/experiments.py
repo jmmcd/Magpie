@@ -91,7 +91,7 @@ budget = 25000
 nreps = 3 # 10 datasets x 3 reps is plenty.
 param_grid = {
     'maxgenomelen': [30, 50],
-    'maxcohortlen': [4, 8, 15],
+    'maxcohortlen': [2, 4, 8, 15],
     'X_bounds': ['none', 'train', 'test'],
     'gramfile': ['symbolic_regression.bnf',
                  'symbolic_regression_sqrt_log_exp_abs.bnf'],
@@ -99,7 +99,7 @@ param_grid = {
     'valsize': [0.0, 0.25, 0.5],
     #'initevals': [10, 30, 80],
     'mutprob': [0.6, 1.0],
-    'n_num_optimisations': [0, 3, 5],
+    'n_num_optimisations': [0, 1, 3, 5],
     #'X_bounds_margin': [0.05]
 }
 def count_grid(g):
@@ -109,12 +109,11 @@ def count_grid(g):
     return result
 est_time_per_ind = 50 / 25000 # in seconds, estimated from some typical runs of 25000 individuals which took 50s
 ncores = 30
-
 print(f"we will run {count_grid(param_grid)} configurations")
 print(f"with {nreps} nreps, {len(srbench_datasets)} datasets, and budget {budget}")
 print(f"we have {ncores} cores")
 print(f"estimate: {nreps * count_grid(param_grid) * len(srbench_datasets) * budget * est_time_per_ind / (ncores * 60 * 60)} hours")
-print(f"we will have {count_grid(param_grid) * nreps * len(srbench_datasets)} rows in the csv")
+print(f"we will have {nreps * count_grid(param_grid) * len(srbench_datasets)} rows in experiments_checkpoint.csv")
 param_keys = list(param_grid.keys())
 sys.exit()
 
