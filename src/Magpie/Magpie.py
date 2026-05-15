@@ -56,17 +56,17 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
     def __init__(self,
                  maxevals=25000, 
                  initevals=3000, 
-                 mutprob=0.8,
+                 mutprob=1.0,
                  maxgenomelen=30, 
-                 maxcohortlen=7,
+                 maxcohortlen=4,
                  gramfile="symbolic_regression.bnf",
-                 valsize=0.2,
+                 valsize=0.0,
                  initprob=0.0,
                  prop_consts=0.75, # n_consts relative to n_vars
                  X_bounds='none',
                  X_bounds_test_data=None,
                  X_bounds_margin=0.05,
-                 n_num_optimisations=5
+                 n_num_optimisations=1
                  ):
         self.maxevals = maxevals
         self.initevals = initevals
@@ -395,7 +395,7 @@ class EvoLengthPop:
         return eqns, best
     
         # below is implementation of hypervolume, unused for now
-        
+
         # # 2D hypervolume: staircase area dominated by the Pareto front
         # # reference point uses null model loss (variance of y_val) and max possible complexity
         # # front is already sorted by complexity ascending (cohort iteration order)
