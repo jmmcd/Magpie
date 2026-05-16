@@ -1,13 +1,11 @@
 import os, sys
 from datetime import datetime
 from pathlib import Path
-import random
 import time
 import importlib.resources as pkg_resources
 from pmlb import fetch_data, regression_dataset_names
 from joblib import Parallel, delayed
 
-import numpy as np
 import pandas as pd
 pd.set_option('display.float_format', '{:.2f}'.format)
 pd.set_option('display.max_colwidth', None)
@@ -65,9 +63,7 @@ for name, (X, y) in srbench_datasets.items():
 
 ## run_model
 
-def run_model(model, rep, X_train, X_test, y_train, y_test):
-    random.seed(rep)
-    np.random.seed(rep)
+def run_model(model, X_train, X_test, y_train, y_test):
     start = time.time()
     model.fit(X_train, y_train)
     end = time.time()
@@ -207,8 +203,9 @@ def run_single(datasetname, rep, params):
     X_train, X_test, y_train, y_test = srbench_splits[datasetname]
     mr = MagpieRegressor(maxevals=budget,
                          X_bounds_test_data=X_test,
+                         random_state=rep,
                          **params)
-    r = run_model(mr, rep, X_train, X_test, y_train, y_test)
+    r = run_model(mr, X_train, X_test, y_train, y_test)
     param_vals = tuple(params[k] for k in param_keys)
     r = (datasetname, dataset_n, dataset_k, rep, "Magpie", *param_vals, *r)
     print(r, str(datetime.now()))

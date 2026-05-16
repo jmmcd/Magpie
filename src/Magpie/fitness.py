@@ -87,7 +87,7 @@ def simplify(p, n_vars):
     zs = s.simplify()
     return str(zs)
 
-def optimise(ps, X, y, n_optimisations):
+def optimise(ps, X, y, n_optimisations, rng):
     """ Optimise the constants in ps to fit X, y.
     ps is a string, e.g. "C[0] * X[0]"
     X is a 2d numpy array, with shape (n_vars, n_samples)
@@ -125,11 +125,11 @@ def optimise(ps, X, y, n_optimisations):
                          "max": "np.maximum", "min": "np.minimum"})
     p = eval("lambda X, *C: " + ps_np) # we need the np-version for optimisation, but return the version without np. prefix
     
-    best_popt = np.random.randn(n_consts)
+    best_popt = rng.randn(n_consts)
     best_cost = np.sum((p(X, *best_popt) - y) ** 2)
     for _ in range(n_optimisations):
         try:
-            C_init = np.random.randn(n_consts)
+            C_init = rng.randn(n_consts)
             # inside the loop:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", OptimizeWarning)
@@ -159,7 +159,7 @@ def check_intervals(p, bounds):
         raise SingularityException
     return result
 
-def evaluate(ps, X_train, y_train, X_test=None, y_test=None, X_bounds=None, n_optimisations=5):
+def evaluate(ps, X_train, y_train, X_test=None, y_test=None, X_bounds=None, n_optimisations=5, rng=None):
     # X is in sklearn format, but we need it in transposed format,
     # because we will be using interval arithmetic and (later, Sympy
     # simplification) where it is natural to have a 1d array of
@@ -172,7 +172,7 @@ def evaluate(ps, X_train, y_train, X_test=None, y_test=None, X_bounds=None, n_op
     # p is a function of X and C.
     # X can be 2d numpy array, or an array of intervals, or Sympy vars
 
-    newc, ps = optimise(ps, X, y, n_optimisations)
+    newc, ps = optimise(ps, X, y, n_optimisations, rng)
     fn_mappings = {"sin": np.sin, "log": np.log, "cos": np.cos,
                    "exp": np.exp, "sqrt": np.sqrt, "abs": np.abs,
                    "max": np.maximum, "min": np.minimum}

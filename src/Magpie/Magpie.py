@@ -1,7 +1,6 @@
 # Magpie: multi-objective archive genetic programming (from Ireland)
 
 from pathlib import Path
-import random
 import numpy as np
 import pandas as pd
 from dataclasses import dataclass
@@ -9,6 +8,7 @@ from typing import Optional, Callable
 np.seterr(all='raise')
 from sklearn.model_selection import train_test_split
 from sklearn.base import BaseEstimator, RegressorMixin
+from sklearn.utils import check_random_state
 
 from .grammar import Grammar, derive_string
 from .exceptions import *
@@ -65,7 +65,8 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
                  X_bounds='none',
                  X_bounds_test_data=None,
                  X_bounds_margin=0.05,
-                 n_num_optimisations=1
+                 n_num_optimisations=1,
+                 random_state=None
                  ):
         self.maxevals = maxevals
         self.init_prop = init_prop
@@ -83,6 +84,7 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
         self.X_bounds_test_data = X_bounds_test_data
         self.X_bounds_margin = X_bounds_margin
         self.n_num_optimisations = n_num_optimisations
+        self.random_state = random_state
 
         assert 0.0 <= mutprob <= 1.0
         assert 0.0 <= init_prop <= 1.0
@@ -156,6 +158,7 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
         # offspring is added to the population structure only if it's
         # good (so replacement is controlled by fitness).
         
+        self.rng_ = check_random_state(self.random_state)
         initevals = int(self.maxevals * self.init_prop)
         evals = 0
         attempts = 0
@@ -176,16 +179,16 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
             else:
                 # we've finished the early part, so make a new
                 # individual by mut or xover
-                r = random.random()
+                r = self.rng_.random_sample()
                 if r < self.mutprob:
                     # take a random genome from the elite and mutate
-                    ind = pop.random() # get random ind from pop
+                    ind = pop.random(self.rng_) # get random ind from pop
                     uc, g = ind.used_codons, ind.genome
                     g = self.mutate_genome(uc, g)
                 else:
                     # xover
-                    ind0 = pop.random()
-                    ind1 = pop.random()
+                    ind0 = pop.random(self.rng_)
+                    ind1 = pop.random(self.rng_)
                     uc0, g0 = ind0.used_codons, ind0.genome
                     uc1, g1 = ind1.used_codons, ind1.genome
                     g = self.xover_genome(uc0, g0, uc1, g1)
@@ -203,7 +206,7 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
 
                 # evaluate, optimise, simplify
                 evals += 1
-                res = evaluate(ps, X_train, y_train, X_val, y_val, X_bounds, self.n_num_optimisations)
+                res = evaluate(ps, X_train, y_train, X_val, y_val, X_bounds, self.n_num_optimisations, self.rng_)
                 if not(np.isfinite(res[0])) or (res[1] is not None and not np.isfinite(res[1])):
                     # nan or inf as train or val fitness
                     raise SingularityException
@@ -238,29 +241,30 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
         self.equations_, self.equation_ = pop.extract_best_eqns(self.column_names_in_)
         return self
 
+    
     def random_genome(self):
-        genome = np.random.randint(self.gram.production_lcm, size=self.maxgenomelen)
-        return genome
+        return self.rng_.randint(0, self.gram.production_lcm, size=self.maxgenomelen)
+
 
     def mutate_genome(self, uc, genome):
         genome = genome.copy()
-        idx = random.randrange(uc)
+        idx = self.rng_.randint(0, uc)
         gi = genome[idx]
         iters = 0
         while genome[idx] == gi:
-            genome[idx] = random.randrange(self.gram.production_lcm)
+            genome[idx] = self.rng_.randint(0, self.gram.production_lcm)
             iters += 1
             if iters == 1000:
                 print(f"DEBUG mutate_genome spinning: production_lcm={self.gram.production_lcm} gi={gi}", flush=True)
         return genome
 
     def xover_genome(self, uc0, g0, uc1, g1):
-        g0 = g0.copy() # we only change g0 and only return 1 new genome
+        g0 = g0.copy()
         active = uc0
         if active < 2:
             return g0
-        idx0 = random.randrange(active - 1)
-        idx1 = random.randrange(idx0 + 1, len(g0) + 1) # typically the 'tail' of g0 is retained
+        idx0 = self.rng_.randint(0, active - 1)
+        idx1 = self.rng_.randrange(idx0 + 1, len(g0) + 1) # typically the 'tail' of g0 is retained
         g0[idx0:idx1] = g1[idx0:idx1]
         return g0
     
@@ -327,21 +331,21 @@ class EvoLengthPop:
                 return True
         return False
 
-    def random(self) -> Individual:
+    def random(self, rng) -> Individual:
         # get a random element of the population. notice we select the
         # cohort (length) first, then choose a random element of that.
         # this is fast, but arguably a different slower method would
         # be better.. different distribution over sizes.
-        cohort = random.choice(self.inds)
+        cohort = self.inds[rng.randint(len(self.inds))]
         # use a loop, because no guarantee the first cohort we pick
         # will be non-empty
         iters = 0
         while not len(cohort):
-            cohort = random.choice(self.inds)
+            cohort = self.inds[rng.randint(len(self.inds))]
             iters += 1
             if iters == 1000:
                 print(f"DEBUG EvoLengthPop.random() spinning: all cohorts empty", flush=True)
-        return random.choice(cohort)        
+        return cohort[rng.randint(len(cohort))]        
 
     def extract_best_eqns(self, colnames): # , null_model_loss
         # take the Pareto Front based on validation cost
