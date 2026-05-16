@@ -75,8 +75,8 @@ def readable_eqn(ps, varnames):
 def latex_eqn(ps, varnames):
     import sympy
     ps = readable_eqn(ps, varnames)
-    # symbols = sympy.symbols(varnames)
     ps = sympy.sympify(ps)
+    ps = ps.xreplace({a: sympy.Float(round(float(a), 10)) for a in ps.atoms(sympy.Float)})
     s = sympy.latex(ps)
     return s
 
