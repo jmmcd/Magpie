@@ -111,22 +111,93 @@ param_grid = [
                'prop_consts': [0.0]},
 ]
 
-def count_grid(g):
-    result = 1
-    for k in g:
-        result *= len(g[k])
-    return result
-est_time_per_ind = 50 / 25000 # in seconds, estimated from some typical runs of 25000 individuals which took 50s
-ncores = 30
-print(f"we will run {count_grid(param_grid)} configurations")
-print(f"with {nreps} nreps, {len(srbench_datasets)} datasets, and budget {budget}")
-print(f"we have {ncores} cores")
-print(f"estimate: {nreps * count_grid(param_grid) * len(srbench_datasets) * budget * est_time_per_ind / (ncores * 60 * 60)} hours")
-print(f"we will have {nreps * count_grid(param_grid) * len(srbench_datasets)} rows in experiments_checkpoint.csv")
-param_keys = list(param_grid.keys())
-sys.exit()
-
+import argparse
 import json
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--no-dry-run', action='store_true', dest='run',
+                    help='Actually run experiments (default: dry-run only)')
+args = parser.parse_args()
+dry_run = not args.run
+
+# param_keys: all keys appearing in any sub-grid (order-preserving, deduped)
+param_keys = list(dict.fromkeys(k for subgrid in param_grid for k in subgrid.keys()))
+
+all_configs = list(ParameterGrid(param_grid))
+n_configs = len(all_configs)
+est_time_per_ind = 50 / 25000
+ncores = 30
+print(f"Param grid: {n_configs} configurations")
+print(f"  nreps={nreps}, datasets={len(srbench_datasets)}, budget={budget}, cores={ncores}")
+print(f"  Total rows if complete: {nreps * n_configs * len(srbench_datasets)}")
+print(f"  Estimated time: {nreps * n_configs * len(srbench_datasets) * budget * est_time_per_ind / (ncores * 3600):.1f} hours")
+
+
+## Checkpointing
+
+CHECKPOINT_CSV = "experiments_checkpoint.csv"
+cols = ("Dataset", "N", "K", "Rep", "Model", *param_keys, "Time", "Rsq_train", "Rsq_test", "Size", "N_vars_used", "N_consts_used", "Equation")
+
+def task_key(datasetname, rep, params):
+    return (datasetname,) + tuple(params[k] for k in param_keys) + (rep,)
+
+first_config = all_configs[0]
+
+if os.path.exists(CHECKPOINT_CSV):
+    checkpoint_df = pd.read_csv(CHECKPOINT_CSV, index_col=0)
+    for k in param_keys:
+        checkpoint_df[k] = checkpoint_df[k].astype(type(first_config[k]))
+    done = set(
+        task_key(row["Dataset"], int(row["Rep"]), {k: row[k] for k in param_keys})
+        for _, row in checkpoint_df.iterrows()
+    )
+    results = [tuple(row) for row in checkpoint_df.itertuples(index=False)]
+else:
+    checkpoint_df = None
+    done = set()
+    results = []
+
+all_tasks = [
+    (datasetname, rep, params)
+    for datasetname in srbench_splits
+    for params in all_configs
+    for rep in range(nreps)
+]
+all_task_keys = {task_key(*t) for t in all_tasks}
+pending_tasks = [t for t in all_tasks if task_key(*t) not in done]
+
+## Dry-run report
+
+print(f"\nCheckpoint: {len(done)} tasks done, {len(pending_tasks)} pending")
+
+if checkpoint_df is not None:
+    stale_mask = [
+        task_key(row["Dataset"], int(row["Rep"]), {k: row[k] for k in param_keys})
+        not in all_task_keys
+        for _, row in checkpoint_df.iterrows()
+    ]
+    stale_df = checkpoint_df[stale_mask]
+    if len(stale_df):
+        print(f"\nWARNING: {len(stale_df)} checkpoint rows do not match the current param grid:")
+        print(stale_df[["Dataset", "Rep", *param_keys]].to_string(index=False))
+    else:
+        print("No stale checkpoint rows.")
+
+print(f"\nPending tasks ({len(pending_tasks)}):")
+i = 0
+for datasetname, rep, params in pending_tasks:
+    print(f"  dataset={datasetname} rep={rep} " + " ".join(f"{k}={v}" for k, v in params.items()))
+    i += 1
+    if i > 10:
+        print("...")
+        break
+
+if dry_run:
+    print("\nDry run complete. To run experiments: python experiments.py --no-dry-run")
+    sys.exit(0)
+
+## Live run
+
 with open(f"param_grid_{datetime.now().strftime('%Y_%m_%d_%H%M')}.json", "w") as f:
     json.dump(param_grid, f, indent=2)
 
@@ -135,48 +206,13 @@ def run_single(datasetname, rep, params):
     dataset_n, dataset_k = srbench_datasets[datasetname][0].shape
     X_train, X_test, y_train, y_test = srbench_splits[datasetname]
     mr = MagpieRegressor(maxevals=budget,
-                         X_bounds_test_data=X_test, # usually unused
+                         X_bounds_test_data=X_test,
                          **params)
     r = run_model(mr, rep, X_train, X_test, y_train, y_test)
     param_vals = tuple(params[k] for k in param_keys)
     r = (datasetname, dataset_n, dataset_k, rep, "Magpie", *param_vals, *r)
     print(r, str(datetime.now()))
     return r
-
-
-## Checkpointing, so if a run hangs, we can restart this whole script and it will
-# skip runs that are already finished
-
-CHECKPOINT_CSV = "experiments_checkpoint.csv"
-cols = ("Dataset", "N", "K", "Rep", "Model", *param_keys, "Time", "Rsq_train", "Rsq_test", "Size", "N_vars_used", "N_consts_used", "Equation")
-
-def task_key(datasetname, rep, params):
-    return (datasetname,) + tuple(params[k] for k in param_keys) + (rep,)
-
-if os.path.exists(CHECKPOINT_CSV):
-    checkpoint_df = pd.read_csv(CHECKPOINT_CSV, index_col=0)
-    for k in param_keys:
-        checkpoint_df[k] = checkpoint_df[k].astype(type(param_grid[k][0]))
-    done = set(
-        task_key(row["Dataset"], int(row["Rep"]), {k: row[k] for k in param_keys})
-        for _, row in checkpoint_df.iterrows()
-    )
-    results = [tuple(row) for row in checkpoint_df.itertuples(index=False)]
-else:
-    done = set()
-    results = []
-
-
-## run the runs in parallel
-
-all_tasks = [
-    (datasetname, rep, params)
-    for datasetname in srbench_splits
-    for params in ParameterGrid(param_grid)
-    for rep in range(nreps)
-]
-pending_tasks = [t for t in all_tasks if task_key(*t) not in done]
-print(f"{len(done)} tasks already complete, {len(pending_tasks)} remaining")
 
 for r in Parallel(n_jobs=ncores, return_as='generator_unordered')(
     delayed(run_single)(datasetname, rep, params)
