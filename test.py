@@ -13,7 +13,7 @@ y = x0**3 + np.log(0.5 * x1) + noise
 X = np.column_stack([x0, x1])
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
 
-mr = MagpieRegressor(maxevals=500, initevals=200,
+mr = MagpieRegressor(maxevals=500, init_prop=0.2,
                      gramfile="base_const.bnf",
                      prop_consts=0.0,
                      n_num_optimisations=0)
