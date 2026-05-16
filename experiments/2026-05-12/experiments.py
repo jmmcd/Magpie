@@ -97,7 +97,7 @@ shared = {
     'valsize': [0.0, 0.25, 0.5],
     'mutprob': [0.6, 1.0],
     #'prop_consts': [0.5, 0.75, 1.0],
-    #'initevals': [10, 30, 80],
+    'init_prop': [0.12, 0.20],
     #'X_bounds_margin': [0.05]
 }
 param_grid = [

@@ -54,14 +54,13 @@ class Individual:
 
 class MagpieRegressor(BaseEstimator, RegressorMixin):
     def __init__(self,
-                 maxevals=25000, 
-                 initevals=3000, 
+                 maxevals=25000,
+                 init_prop=0.2,
                  mutprob=1.0,
                  maxgenomelen=30, 
                  maxcohortlen=4,
                  gramfile="base_placeholders.bnf",
                  valsize=0.0,
-                 initprob=0.0,
                  prop_consts=0.75, # n_consts relative to n_vars
                  X_bounds='none',
                  X_bounds_test_data=None,
@@ -69,9 +68,8 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
                  n_num_optimisations=1
                  ):
         self.maxevals = maxevals
-        self.initevals = initevals
+        self.init_prop = init_prop
         self.mutprob = mutprob
-        self.initprob = initprob # xoverprob = 1 - initprob - mutprob
         self.maxgenomelen = maxgenomelen
         self.maxcohortlen = maxcohortlen
         if Path(gramfile).exists():
@@ -86,8 +84,8 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
         self.X_bounds_margin = X_bounds_margin
         self.n_num_optimisations = n_num_optimisations
 
-        assert initprob + mutprob <= 1.0
-        assert initevals <= maxevals
+        assert 0.0 <= mutprob <= 1.0
+        assert 0.0 <= init_prop <= 1.0
 
     def fit(self, X, y=None):
 
@@ -158,6 +156,7 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
         # offspring is added to the population structure only if it's
         # good (so replacement is controlled by fitness).
         
+        initevals = int(self.maxevals * self.init_prop)
         evals = 0
         attempts = 0
         max_attempts = self.maxevals * 10
@@ -171,16 +170,14 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
                 print(f"DEBUG max_attempts {max_attempts} reached at evals={evals}, breaking", flush=True)
                 break
 
-            if evals < self.initevals or pop.is_empty():
+            if evals < initevals or pop.is_empty():
                 # we're in the early part of the run: make random genome
                 g = self.random_genome()
             else:
                 # we've finished the early part, so make a new
-                # individual by init, mut, or xover
+                # individual by mut or xover
                 r = random.random()
-                if r < self.initprob:
-                    g = self.random_genome()
-                elif r < self.initprob + self.mutprob:
+                if r < self.mutprob:
                     # take a random genome from the elite and mutate
                     ind = pop.random() # get random ind from pop
                     uc, g = ind.used_codons, ind.genome
@@ -437,7 +434,7 @@ if __name__ == '__main__':
     from sklearn.model_selection import train_test_split
     X, y = load_diabetes(return_X_y=True)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-    mr = MagpieRegressor(maxevals=20000, initevals=5000)
+    mr = MagpieRegressor(maxevals=20000)
     mr.fit(X_train, y_train)
     pd.set_option('display.float_format', '{:.2f}'.format)
     pd.set_option('display.max_colwidth', None)
