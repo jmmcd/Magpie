@@ -89,19 +89,28 @@ def run_model(model, rep, X_train, X_test, y_train, y_test):
 
 budget = 25000
 nreps = 3 # 10 datasets x 3 reps is plenty.
-param_grid = {
+
+shared = {
     'maxgenomelen': [30, 50],
     'maxcohortlen': [2, 4, 8, 15],
     'X_bounds': ['none', 'train', 'test'],
-    'gramfile': ['symbolic_regression.bnf',
-                 'symbolic_regression_sqrt_log_exp_abs.bnf'],
-    #'prop_consts': [0.5, 0.75, 1.0],
     'valsize': [0.0, 0.25, 0.5],
-    #'initevals': [10, 30, 80],
     'mutprob': [0.6, 1.0],
-    'n_num_optimisations': [0, 1, 3, 5],
+    #'prop_consts': [0.5, 0.75, 1.0],
+    #'initevals': [10, 30, 80],
     #'X_bounds_margin': [0.05]
 }
+param_grid = [
+    {**shared, 'gramfile': ['base_placeholders.bnf',
+                            'extended_placeholders.bnf'],
+               'n_num_optimisations': [1, 3, 5],
+               'prop_consts': [0.75]},
+    {**shared, 'gramfile': ['base_consts.bnf',
+                            'extended_consts.bnf'],
+               'n_num_optimisations': [0],
+               'prop_consts': [0.0]},
+]
+
 def count_grid(g):
     result = 1
     for k in g:

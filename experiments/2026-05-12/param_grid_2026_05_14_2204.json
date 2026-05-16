@@ -15,8 +15,8 @@
     "test"
   ],
   "gramfile": [
-    "symbolic_regression.bnf",
-    "symbolic_regression_sqrt_log_exp_abs.bnf"
+    "base_placeholders.bnf",
+    "extended_placeholders.bnf"
   ],
   "valsize": [
     0.0,
@@ -28,9 +28,9 @@
     1.0
   ],
   "n_num_optimisations": [
-    0,
     1,
     3,
     5
-  ]
+  ],
+  "prop_consts": [0.75]
 }

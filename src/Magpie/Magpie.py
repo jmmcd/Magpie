@@ -59,7 +59,7 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
                  mutprob=1.0,
                  maxgenomelen=30, 
                  maxcohortlen=4,
-                 gramfile="symbolic_regression.bnf",
+                 gramfile="base_placeholders.bnf",
                  valsize=0.0,
                  initprob=0.0,
                  prop_consts=0.75, # n_consts relative to n_vars
@@ -97,6 +97,15 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
         # print('n_vars', n_vars)
         self.n_consts = int(n_vars * self.prop_consts)
         self.gram = Grammar(self.gramfile, n_vars=n_vars, n_consts=self.n_consts)
+        grammar_has_consts = '<constidx>' in self.gram.non_terminals
+        assert (self.prop_consts > 0) == grammar_has_consts, (
+            f"prop_consts={self.prop_consts} but grammar {'has' if grammar_has_consts else 'has no'} <constidx>; "
+            "use prop_consts=0 with explicit-constant grammars"
+        )
+        assert (self.n_num_optimisations > 0) == grammar_has_consts, (
+            f"n_num_optimisations={self.n_num_optimisations} but grammar "
+            f"{'has' if grammar_has_consts else 'has no'} <constidx>"
+        )
         try:
             self.column_names_in_ = X.columns
             X = X.values

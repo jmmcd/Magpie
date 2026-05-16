@@ -20,12 +20,8 @@ with open(GRID) as f:
     param_grid = json.load(f)
 
 df["Rsq_test_clamped"] = df["Rsq_test"].clip(lower=-1)
-df = df[df["n_num_optimisations"] != 0].copy()
-df["grammar"] = df["gramfile"].replace({
-    "symbolic_regression.bnf": "basic",
-    "symbolic_regression_sqrt_log_exp_abs.bnf": "extended",
-})
-df = df.drop(columns=["gramfile"])
+df["uops"] = df["gramfile"].map(lambda g: "extended" if "extended" in g else "base")
+df = df.drop(columns=["gramfile", "prop_consts"])
 df["n_opt"] = df["n_num_optimisations"]
 df = df.drop(columns=["n_num_optimisations"])
 
@@ -37,7 +33,7 @@ if len(_neg) > 0:
 
     # 1. Marginal negative rate by factor level
     print("\nNegative rate by factor level (marginal over all other factors):")
-    for _f in ["grammar", "n_opt", "maxgenomelen", "maxcohortlen", "X_bounds", "valsize", "mutprob"]:
+    for _f in ["uops", "n_opt", "maxgenomelen", "maxcohortlen", "X_bounds", "valsize", "mutprob"]:
         if _f not in df.columns:
             continue
         _rates = (
@@ -57,9 +53,10 @@ if len(_neg) > 0:
     print(_pivot.round(3).to_string())
 
 factors = [
-    "grammar" if f == "gramfile" else
+    "uops" if f == "gramfile" else
     "n_opt" if f == "n_num_optimisations" else
     f for f in param_grid.keys()
+    if f not in ("prop_consts",)
 ]
 
 _LABEL_MAP = {
@@ -77,7 +74,7 @@ ref_config = {
     "maxgenomelen": 30,
     "maxcohortlen": 4,
     "X_bounds": "train",
-    "grammar": "basic",
+    "uops": "base",
     "valsize": 0.0,
     "mutprob": 1.0,
     "n_opt": 3,
