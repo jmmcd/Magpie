@@ -199,22 +199,28 @@ with open(f"param_grid_{datetime.now().strftime('%Y_%m_%d_%H%M')}.json", "w") as
 
 def run_single(datasetname, rep, params):
     print(f"DEBUG start run_single dataset={datasetname} params={params} rep={rep} {datetime.now()}", flush=True)
-    dataset_n, dataset_k = srbench_datasets[datasetname][0].shape
-    X_train, X_test, y_train, y_test = srbench_splits[datasetname]
-    mr = MagpieRegressor(maxevals=budget,
-                         X_bounds_test_data=X_test,
-                         random_state=rep,
-                         **params)
-    r = run_model(mr, X_train, X_test, y_train, y_test)
-    param_vals = tuple(params[k] for k in param_keys)
-    r = (datasetname, dataset_n, dataset_k, rep, "Magpie", *param_vals, *r)
-    print(r, str(datetime.now()))
-    return r
+    try:
+        dataset_n, dataset_k = srbench_datasets[datasetname][0].shape
+        X_train, X_test, y_train, y_test = srbench_splits[datasetname]
+        mr = MagpieRegressor(maxevals=budget,
+                             X_bounds_test_data=X_test,
+                             random_state=rep,
+                             **params)
+        r = run_model(mr, X_train, X_test, y_train, y_test)
+        param_vals = tuple(params[k] for k in param_keys)
+        r = (datasetname, dataset_n, dataset_k, rep, "Magpie", *param_vals, *r)
+        print(r, str(datetime.now()))
+        return r
+    except Exception as e:
+        print(f"ERROR dataset={datasetname} rep={rep} params={params}: {e}", flush=True)
+        return None
 
 for r in Parallel(n_jobs=ncores, return_as='generator_unordered')(
     delayed(run_single)(datasetname, rep, params)
     for datasetname, rep, params in pending_tasks
 ):
+    if r is None:
+        continue
     results.append(r)
     pd.DataFrame(results, columns=cols).to_csv(CHECKPOINT_CSV)
 
