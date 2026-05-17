@@ -20,6 +20,6 @@ setup(
     ],
     include_package_data=True,
     package_data={
-        "Magpie": ["data/*", "grammars/*"]
+        "Magpie": ["grammars/*"]
     },
 )
