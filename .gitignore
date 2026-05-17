@@ -10,7 +10,7 @@ __pycache__/
 examples/outputs/
 
 # pmlb data cache
-data/
+experiments/data/
 
 # VS Code
 .vscode/
