@@ -264,7 +264,7 @@ class MagpieRegressor(BaseEstimator, RegressorMixin):
         if active < 2:
             return g0
         idx0 = self.rng_.randint(0, active - 1)
-        idx1 = self.rng_.randrange(idx0 + 1, len(g0) + 1) # typically the 'tail' of g0 is retained
+        idx1 = self.rng_.randint(idx0 + 1, len(g0) + 1)
         g0[idx0:idx1] = g1[idx0:idx1]
         return g0
     
