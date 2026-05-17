@@ -1,6 +1,21 @@
-# Many TODOs
+# Suggestions for student projects
 
-* Improvements over  plain GE are certainly possible (Rothlauf; Whigham; LTGE, by Moraglio and McDermott, unpublished).
+* **Assortative mating** is a concept in evolutionary biology: individuals are more likely to mate with other individuals which are *different* from them. That is, opposites attract. Does assortative mating help in Magpie? Or does the opposite help? We could measure "different" in several ways:
+  * Similar **size** (so, crossover works by choose a random individual, then choose another in a similar-sized bin)
+  * Similar **semantics**
+For each of these, we could try:
+  * Assortative mating, ie bias crossover to make the second parent highly different
+  * The opposite, ie bias crossover to make the second parent highly similar
+  * The default, ie no such bias.
+This gives a 2 x 3 experimental design. Run the whole thing on 10-20 datasets with say 10 runs each. For all other hyperparameters, use defaults. Read the Magpie paper for background.
+
+* The **Hypervolume** of a Pareto front is the volume of objective space covered by the set of individuals of the front. It's a standard measure of how well a multi-objective algorithm has performed. We should add it to our calculations at the end of a run, and test the implementation carefully, including thinking about the choice of reference point. Then we should run a set of experiments, starting from the Magpie reference config (default hyperparameters) and trying out changes to see if any improve the reported hypervolume. 
+
+
+
+# Many other TODOs
+
+* Improvements over plain GE are certainly possible (Rothlauf; Whigham; LTGE, by Moraglio and McDermott, unpublished).
 
 * We could have a Pareto front within each bin, seeing the test cases as objectives. Or a many-objective approach such as lexicase selection.
 
@@ -39,7 +54,6 @@ evaluation, eg log(c0). TODO.
 * PySR (Cramner) incorporates special complexity penalties which
 prevent non-idiomatic functions such as sin(sin(sin(x0))). ITEA (Olivetti) achieved similar in a different way. TODO.
 
-
 * Rockett investigated both optimisation of constants during a run,
 and after a run, and did not find a large advantage in favour of
 using it during a run. Since it's so much slower, there is an
@@ -65,7 +79,6 @@ with one hyperparameter. This assumes we have plenty of RAM to store every indiv
 
 * TODO: Sensitivity analysis. One approach would be, apply a 95%, 90% confidence bound on each variable using interval, ie x0 = [0.5, 0.7], and see what are the possible outputs of the model. Another approach: for each variable, choose the *mean* for every other variable, and vary this variable from min to max of its range, to see the effect on the output. Another approach: for each training point, for each variable x (holding others constant), calculate f(x) - f(x - 1SD) and calculate f(x + 1SD) - f(x), that is calculate the effect of a 1SD increase, but in two scenarios. If either x - 1SD or x + 1SD goes outside the range of y, consider discarding it? Maybe use 0.1 SD instead. Then for each variable, we can see the distribution of the effect on f of a 1 SD increase in x. Maybe this distribution tells us something interesting about f. If it includes both pos and neg, does that tell us the model is non-linear in a useful way?
 
-* Assortative mating (re size) versus the opposite
 
 * Threshold on accuracy to avoid too-simple models contributing too often to crossover/mutation
 
@@ -74,7 +87,11 @@ with one hyperparameter. This assumes we have plenty of RAM to store every indiv
 * Need to rethink validation data for constant optimisation and for model selection. Maybe it is ok, but maybe re-unify
 them for hypervolume calculation? Maybe use *both* for model selection?
 
-* Have implemented hypervolumen and simplification but need to test both.
+* Have implemented hypervolume and simplification but need to test both.
+
+* Simplification before fitting constants would be nice as it would save curve_fit time, but it requires some hacking to deal with (c[0] + c[1]) because sympy doesn't know they are constants that can be absorbed. Simplification before printing the final equation would be easier because the constants are now constants. Simplification before the final *latex* is what we have right now.
+
+* Consider counting tree complexity using sympy `len(list(sp.preorder_traversal(expr)))` either during the run, or after simplification at the end.
 
 * Consider changing to MSE or R^2 instead of ugly 1-R^2.
 
@@ -86,4 +103,7 @@ them for hypervolume calculation? Maybe use *both* for model selection?
   * Same for rational functions up to degree 4
   * Same for some log and exp templates
   * (Maybe just run FFX and use it to seed the population?)
+
+
+
 

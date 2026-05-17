@@ -26,7 +26,7 @@ Optimisation.**
 
 1. Create a set of bins, one per integer size, up to some maximum size. Each bin has a max capacity.
 2. Create N individuals, ie GE genomes sampled uniformly, and convert by GE derivation to regression equations. For each individual, evaluate fitness and add it to the appropriate bin based on its size, measured as number of active codons used by the GE derivation.
-3. While our budget is not exhausted: select an individual at random from the bins and mutate (or select two and crossover). Evaluate fitness and add it to the appropriate bin based on its size. (There is no fixed pop size or number of generations.) When a bin is over-capacity, remove the worst from that bin based on fitness.
+3. While our budget is not exhausted: select an individual at random from the bins and mutate (or select two and crossover). Evaluate fitness and try-add it to the appropriate bin based on its size. (There is no fixed pop size or number of generations.) If a bin is at capacity, try-add only adds it if it's better than at least one (and then the worst is removed).
 4. By the way, keep a cache of individuals seen. If step 2 or step 3 creates a duplicate at genotype or phenotype level, discard it before adding.
 5. By the way, evaluation for fitness may include evaluation for invalid computations, using interval arithmetic.
 
@@ -81,6 +81,7 @@ See LICENSE.
 
 A paper is in review (May 2026).
 
-# Ongoing research
+# Ongoing research and suggestions for student projects
 
 See `TODO.md`.
+
