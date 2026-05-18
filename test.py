@@ -15,7 +15,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 
 mr = MagpieRegressor(maxevals=500, init_prop=0.2,
                      mutprob=0.5,
-                     gramfile="base_const.bnf",
+                     gramfile="base_consts.bnf",
                      prop_consts=0.0,
                      n_num_optimisations=0,
                      random_state=42)
