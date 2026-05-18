@@ -35,7 +35,18 @@ Optimisation.**
 
 # Installation
 
-`pip install -e .`
+## Just to use it
+```
+pip install git+https://github.com/jmmcd/Magpie.git
+```
+
+## To install in order to hack on it
+
+```
+git clone https://github.com/jmmcd/Magpie.git
+cd Magpie
+pip install -e .
+```
 
 # Example usage
 
