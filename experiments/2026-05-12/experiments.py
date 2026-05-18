@@ -71,9 +71,9 @@ def run_model(model, X_train, X_test, y_train, y_test):
     rsq_test = model.score(X_test, y_test)
     rsq_train = model.score(X_train, y_train)
     eq_row = model.equation_.iloc[0]
-    size = eq_row['size']
-    n_vars_used = eq_row['n_vars_used']
-    n_consts_used = eq_row['n_consts_used']
+    size = int(eq_row['size'])
+    n_vars_used = int(eq_row['n_vars_used'])
+    n_consts_used = int(eq_row['n_consts_used'])
     equation = eq_row['equation']
     r = (elapsed, rsq_train, rsq_test, size, n_vars_used, n_consts_used, equation)
     return r
