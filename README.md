@@ -46,7 +46,7 @@ from Magpie import MagpieRegressor
 import pandas as pd
 X, y = load_diabetes(return_X_y=True)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-mr = MagpieRegressor(maxevals=20000, initevals=5000)
+mr = MagpieRegressor(maxevals=20000)
 mr.fit(X_train, y_train)
 pd.set_option('display.float_format', '{:.2f}'.format)
 pd.set_option('display.max_colwidth', None)
