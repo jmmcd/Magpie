@@ -38,6 +38,7 @@ Optimisation.**
 ## Just to use it
 ```
 pip install git+https://github.com/jmmcd/Magpie.git
+python -m Magpie.test # check installation worked
 ```
 
 ## To install in order to hack on it
@@ -46,6 +47,8 @@ pip install git+https://github.com/jmmcd/Magpie.git
 git clone https://github.com/jmmcd/Magpie.git
 cd Magpie
 pip install -e .
+python -m Magpie.test # check installation worked
+# that test is also available directly in src/Magpie/test.py
 ```
 
 # Example usage
