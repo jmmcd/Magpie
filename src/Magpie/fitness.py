@@ -2,6 +2,8 @@ import numpy as np
 from scipy.optimize import curve_fit, OptimizeWarning
 import re
 import warnings
+from interval import interval
+import math
 from .exceptions import *
 from .interval import iv_fn_mappings
 
@@ -72,10 +74,37 @@ def readable_eqn(ps, varnames):
     ps = replaceall(ps, {f'X[{i}]': varnames[i] for i in range(len(varnames))})
     return ps
 
+def _sympify_with_timeout(ps, timeout=5):
+    # a timeout is needed because sympy.simpify can hang, eg:
+    # In [14]: ps = "(7.0 + sqrt((sqrt((X1 / 0.01)) / (X0 / sqrt(sqrt(((X1 + (X1 + X1)) / X0)))))))"
+    # In [15]: sympy.sympify(ps) # hangs!
+    # So, we use a timeout to catch that. If it times out
+    # we fall back to sympify(evaluate=False) which does not hang.
+    # On Windows, the timeout mechanism is not available,
+    # so we always use evaluate=False.
+    import sympy
+    import signal
+
+    if not hasattr(signal, 'SIGALRM'):
+        # Windows lacks signal.alarm(); fall back to unsimplified form.
+        return sympy.sympify(ps, evaluate=False)
+
+    def _handle_timeout(*_):
+        raise TimeoutError
+    old_handler = signal.signal(signal.SIGALRM, _handle_timeout)
+    signal.alarm(timeout)
+    try:
+        return sympy.sympify(ps)
+    except TimeoutError:
+        return sympy.sympify(ps, evaluate=False)
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old_handler)
+
 def latex_eqn(ps, varnames):
     import sympy
     ps = readable_eqn(ps, varnames)
-    ps = sympy.sympify(ps)
+    ps = _sympify_with_timeout(ps)
     ps = ps.xreplace({a: sympy.Float(round(float(a), 10)) for a in ps.atoms(sympy.Float)})
     s = sympy.latex(ps)
     return s
@@ -144,8 +173,6 @@ def optimise(ps, X, y, n_optimisations, rng):
 
 
 def check_intervals(p, bounds):
-    from interval import interval
-    import math
     try:
         result = p(bounds)
     except (ValueError, ZeroDivisionError):
@@ -191,6 +218,7 @@ def evaluate(ps, X_train, y_train, X_test=None, y_test=None, X_bounds=None, n_op
         return result
     newpX = p_transpose(X_train)
     cost = one_m_r2(newpX, y)
+
     # could raise a SingularityException
     if X_bounds is not None:
         p_iv = eval("lambda X, C: " + ps, dict(iv_fn_mappings))

@@ -51,6 +51,10 @@ python -m Magpie.test # check installation worked
 # that test is also available directly in src/Magpie/test.py
 ```
 
+## Compatibility
+
+Tested on MacOS. On Windows, equations may be not fully simplified as Sympy can hang when attempting simplification and Windows lacks a timeout mechanism to catch the hang.
+
 # Example usage
 
 ```
