@@ -12,6 +12,9 @@ examples/outputs/
 # pmlb data cache
 experiments/data/
 
+# some commands useful for our server
+server.sh
+
 # VS Code
 .vscode/
 
