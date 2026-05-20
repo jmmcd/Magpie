@@ -12,10 +12,13 @@ This gives a 2 x 3 experimental design. Run the whole thing on 10-20 datasets wi
 * The **Hypervolume** of a Pareto front is the volume of objective space covered by the set of individuals of the front. It's a standard measure of how well a multi-objective algorithm has performed. We should add it to our calculations at the end of a run, and test the implementation carefully, including thinking about the choice of reference point. Then we should run a set of experiments, starting from the Magpie reference config (default hyperparameters) and trying out changes to see if any improve the reported hypervolume. 
 
 
+* Maybe having numbered constants C[0], C[1], etc up to a max determined by prop_consts is a mistake. Its effect is that sometimes a constant C[i] will appear in more than one place in the equation with the same value. Pros: simpler equations in first place (from information theory point of view) and more opportunities for simplification. Cons: complex code and a hyperparameter to tune (prop_consts). Could just allow C to occur in the grammar, and then convert every C to C[i] when walking the string.
+
+
 
 # Many other TODOs
 
-* Improvements over plain GE are certainly possible (Rothlauf; Whigham; LTGE, by Moraglio and McDermott, unpublished).
+* Improvements over plain GE are certainly possible (Rothlauf; Whigham; LTGE, by Moraglio and McDermott, unpublished). Or a GP-tree approach.
 
 * We could have a Pareto front within each bin, seeing the test cases as objectives. Or a many-objective approach such as lexicase selection.
 
@@ -68,8 +71,6 @@ appropriate idx in its cohort. Select with a triangular distribution
 with one hyperparameter. This assumes we have plenty of RAM to store every individual.
 
 * TODO: save processing by caching subtrees' semantics.
-
-* TODO: Use namedtuples instead of plain tuples to store individuals.
 
 * TODO: compare against PySR (Done), FFX (Done), PyOperon, QD-GP or MAP-Elites GP
 
