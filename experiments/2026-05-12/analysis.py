@@ -55,7 +55,7 @@ if len(_neg) > 0:
 factors = [
     "uops" if f == "gramfile" else
     "n_opt" if f == "n_num_optimisations" else
-    f for f in param_grid.keys()
+    f for f in dict.fromkeys(k for d in param_grid for k in d.keys())
     if f not in ("prop_consts",)
 ]
 
@@ -77,7 +77,8 @@ ref_config = {
     "uops": "base",
     "valsize": 0.0,
     "mutprob": 1.0,
-    "n_opt": 3,
+    "n_opt": 1,
+    "init_prop": 0.2,
 }
 
 # --- Diagnostic: negatives in OFAT subsets (ref config + one-factor variants) ---
@@ -147,16 +148,6 @@ axes[0].set_ylim(-0.6, YMAX)
 
 for ax in axes[n:]:
     ax.set_visible(False)
-
-# Legend in the spare panel — hide all axes decorations
-legend_ax = axes[n]
-legend_ax.set_visible(True)
-legend_ax.set_axis_off()
-legend_handles = [
-    legend_ax.scatter([], [], color=dataset_colors[ds], s=18, label=ds.split("_")[0])
-    for ds in datasets
-]
-legend_ax.legend(handles=legend_handles, title="Dataset", loc="center", frameon=False)
 
 fig.tight_layout()
 fig.subplots_adjust(wspace=0.05)  # tight_layout resets wspace, so re-apply
@@ -352,7 +343,7 @@ _cmp_plot_data = {"FFX": _ffx, "PySR": _pysr, "Magpie": _magpie}
 _cmp_labels = ["FFX", "PySR", "Magpie"]
 _rng_cmp = np.random.default_rng(42)
 
-fig_cmp, ax_cmp = plt.subplots(figsize=(2.2, 3.5))
+fig_cmp, ax_cmp = plt.subplots(figsize=(3.8, 3.5))
 for xi, _mname in enumerate(_cmp_labels):
     _sub = _cmp_plot_data[_mname]
     _median_y = np.clip(_sub["Rsq_test"].median(), YMIN, YMAX)
@@ -368,6 +359,12 @@ ax_cmp.set_ylabel("R² (test)")
 ax_cmp.set_ylim(-0.6, YMAX)
 ax_cmp.axhline(0, color="gray", linewidth=0.6, linestyle="--")
 ax_cmp.yaxis.set_major_formatter(ticker.FormatStrFormatter("%.1f"))
+_cmp_legend_handles = [
+    ax_cmp.scatter([], [], color=dataset_colors[ds], s=18, label=ds.split("_")[0])
+    for ds in datasets
+]
+ax_cmp.legend(handles=_cmp_legend_handles, title="Dataset",
+              bbox_to_anchor=(1.02, 1), loc="upper left", frameon=False, fontsize=7)
 fig_cmp.tight_layout()
 fig_cmp.savefig(HERE / "comparison.png", dpi=150)
 fig_cmp.savefig(HERE / "comparison.pdf")
