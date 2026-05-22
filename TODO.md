@@ -6,7 +6,8 @@
   * Similar **size** (so, crossover works by choose a random individual, then choose another in a similar-sized bin)
   * Similar **semantics**
 
-For each of these, we could try:
+  For each of these, we could try:
+  
   * Assortative mating, ie bias crossover to make the second parent highly different
   * The opposite, ie bias crossover to make the second parent highly similar
   * The default, ie no such bias.
