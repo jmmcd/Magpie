@@ -12,7 +12,7 @@
   * The opposite, ie bias crossover to make the second parent highly similar
   * The default, ie no such bias.
 
-This gives a 2 x 3 experimental design. Run the whole thing on 10-20 datasets with say 10 runs each. For all other hyperparameters, use defaults. Read the Magpie paper for background.
+  This gives a 2 x 3 experimental design. Run the whole thing on 10-20 datasets with say 10 runs each. For all other hyperparameters, use defaults. Read the Magpie paper for background.
 
 * The **Hypervolume** of a Pareto front is the volume of objective space covered by the set of individuals of the front. It's a standard measure of how well a multi-objective algorithm has performed. We should add it to our calculations at the end of a run, and test the implementation carefully, including thinking about the choice of reference point. Then we should run a set of experiments, starting from the Magpie reference config (default hyperparameters) and trying out changes "one factor at a time" (OFAT) to see if any improve the reported hypervolume. 
 
