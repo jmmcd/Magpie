@@ -13,7 +13,7 @@ from sklearn.utils import check_random_state
 from .grammar import Grammar, derive_string
 from .exceptions import *
 from .fitness import evaluate, one_m_r2, latex_eqn, sympy_canonicalize
-from .interval import generate_bounds
+from .iv import generate_bounds
 
 @dataclass
 class Individual:

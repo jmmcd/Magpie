@@ -2,10 +2,9 @@ import numpy as np
 from scipy.optimize import curve_fit, OptimizeWarning
 import re
 import warnings
-from interval import interval
 import math
 from .exceptions import *
-from .interval import iv_fn_mappings
+from .iv import Iv, iv_fn_mappings
 
 
 # currently unused, not really tested yet
@@ -179,8 +178,8 @@ def check_intervals(p, bounds):
         # imath raises ValueError when the interval is entirely outside the
         # function's domain (e.g. log of a negative interval) — that's a singularity
         raise SingularityException
-    if isinstance(result, interval):
-        if not all(math.isfinite(c[0]) and math.isfinite(c[1]) for c in result):
+    if isinstance(result, Iv):
+        if not (math.isfinite(result.lo) and math.isfinite(result.hi)):
             raise SingularityException
     elif not np.all(np.isfinite(result)):  # np.isfinite handles scalars and arrays; float() would fail on arrays
         raise SingularityException

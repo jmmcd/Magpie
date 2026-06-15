@@ -15,8 +15,6 @@ setup(
         "scikit-learn",
         "matplotlib",
         "sympy",
-        "crlibm",
-        "pyinterval"
     ],
     include_package_data=True,
     package_data={
