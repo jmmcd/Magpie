@@ -4,6 +4,14 @@
 
 Photo by <a href="https://unsplash.com/@zmachacek?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash">Zdeněk Macháček</a> on <a href="https://unsplash.com/photos/black-and-white-bird-on-grass-field-mOKHZYMhnQA?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash">Unsplash</a>
 
+# Disambiguation
+
+Not to be confused with:P
+
+* https://github.com/bloa/magpie (genetic improvement)
+* https://www.pik-potsdam.de/en/institute/departments/activities/land-use-modelling/magpie (land-use modelling)
+* https://www.magpiebakery.ie/ (bakery)
+
 # Introduction
 
 Genetic Programming is a form of program synthesis by evolutionary algorithms,
