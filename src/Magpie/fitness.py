@@ -73,6 +73,20 @@ def readable_eqn(ps, varnames):
     ps = replaceall(ps, {f'X[{i}]': varnames[i] for i in range(len(varnames))})
     return ps
 
+_PLACEHOLDER = "MagpieVar{}"
+
+def placeholder_eqn(ps, varnames):
+    # Substitute X[i] with a placeholder name, and return the new equation
+    # plus a map from placeholder to the real variable name. We can't put the
+    # real names into the string and let Sympy parse them, because a column
+    # named E, I or pi would be parsed as the Sympy constant, a column named
+    # zoo would collapse the whole equation to complex infinity, and a column
+    # named lambda (a Python keyword) would fail to parse at all. So the names
+    # only ever become Symbols, after parsing: see latex_eqn.
+    fwd = {f'X[{i}]': _PLACEHOLDER.format(i) for i in range(len(varnames))}
+    back = {_PLACEHOLDER.format(i): str(varnames[i]) for i in range(len(varnames))}
+    return replaceall(ps, fwd), back
+
 def _sympify_with_timeout(ps, timeout=5):
     # a timeout is needed because sympy.simpify can hang, eg:
     # In [14]: ps = "(7.0 + sqrt((sqrt((X1 / 0.01)) / (X0 / sqrt(sqrt(((X1 + (X1 + X1)) / X0)))))))"
@@ -102,9 +116,11 @@ def _sympify_with_timeout(ps, timeout=5):
 
 def latex_eqn(ps, varnames):
     import sympy
-    ps = readable_eqn(ps, varnames)
+    ps, names = placeholder_eqn(ps, varnames)
     ps = _sympify_with_timeout(ps)
     ps = ps.xreplace({a: sympy.Float(round(float(a), 10)) for a in ps.atoms(sympy.Float)})
+    # only now, with parsing done, put the real variable names in
+    ps = ps.xreplace({sympy.Symbol(k): sympy.Symbol(v) for k, v in names.items()})
     s = sympy.latex(ps)
     return s
 
