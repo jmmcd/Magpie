@@ -1,5 +1,5 @@
 from sklearn.model_selection import train_test_split
-from Magpie import MagpieRegressor, generate_bounds
+from SBGP import SBGPRegressor, generate_bounds
 from pysr import PySRRegressor
 from ffx import FFXRegressor
 import pandas as pd
@@ -81,7 +81,7 @@ def run_model(model, rep, X_train, X_test, y_train, y_test):
 # 
 # * FFX is deterministic so 1 run per dataset
 # * PySR we just use its default setup so `n_reps` runs per dataset
-# * Magpie we want to investigate hyperparameters, so `n_reps` runs per dataset per hyperparameter config.
+# * SBGP we want to investigate hyperparameters, so `n_reps` runs per dataset per hyperparameter config.
 # * For now, we just have: 
 #   * 3 ways of doing interval-checking
 #   * 3 values for `initevals`
@@ -101,14 +101,14 @@ def run_single(datasetname, maxgenomelen, maxcohortlen, rep):
     initevals = 5000
     X_bounds_key = 'test'
     X_bounds = generate_bounds(X_test)
-    mr = MagpieRegressor(maxevals=25000,
+    mr = SBGPRegressor(maxevals=25000,
                          mutprob=0.5,
                          maxgenomelen=maxgenomelen,
                          maxcohortlen=maxcohortlen,
                          initevals=initevals,
                          X_bounds=X_bounds)
     r = run_model(mr, rep, X_train, X_test, y_train, y_test)
-    r = ("Magpie", datasetname, dataset_n, dataset_k, rep, X_bounds_key, initevals, maxgenomelen, maxcohortlen, *r)
+    r = ("SBGP", datasetname, dataset_n, dataset_k, rep, X_bounds_key, initevals, maxgenomelen, maxcohortlen, *r)
     print(r, str(datetime.now()))
     return r
 

@@ -73,7 +73,7 @@ def readable_eqn(ps, varnames):
     ps = replaceall(ps, {f'X[{i}]': varnames[i] for i in range(len(varnames))})
     return ps
 
-_PLACEHOLDER = "MagpieVar{}"
+_PLACEHOLDER = "SBGPVar{}"
 
 def placeholder_eqn(ps, varnames):
     # Substitute X[i] with a placeholder name, and return the new equation

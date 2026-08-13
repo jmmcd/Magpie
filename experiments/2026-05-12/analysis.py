@@ -312,7 +312,7 @@ _latex_ofat = (
 (HERE / "ofat_time_size.tex").write_text(_post_process_latex(_latex_ofat))
 print(f"\nOFAT LaTeX table written to {HERE / 'ofat_time_size.tex'}")
 
-# --- Comparison: Magpie (ref config) vs PySR ---
+# --- Comparison: SBGP (ref config) vs PySR ---
 _baselines = pd.read_csv(HERE / "baselines.csv")
 print("\nMean time (s) for baseline models:")
 print(_baselines.groupby("Model")["Time"].mean().round(1).to_string())
@@ -324,23 +324,23 @@ _pysr["Model"] = "PySR"
 _ref_mask = pd.Series(True, index=df.index)
 for _f, _ref_val in ref_config.items():
     _ref_mask &= (df[_f] == _ref_val)
-_magpie = df[_ref_mask][["Dataset", "Rep", "Rsq_test", "Rsq_test_clamped"]].copy()
-_magpie["Model"] = "Magpie"
+_sbgp = df[_ref_mask][["Dataset", "Rep", "Rsq_test", "Rsq_test_clamped"]].copy()
+_sbgp["Model"] = "SBGP"
 
-_compare = pd.concat([_magpie, _pysr], ignore_index=True)
-print("\nMagpie (ref config) vs PySR — observations per model:")
+_compare = pd.concat([_sbgp, _pysr], ignore_index=True)
+print("\nSBGP (ref config) vs PySR — observations per model:")
 print(_compare.groupby("Model")["Rsq_test"].agg(["count", "mean", "median"]).to_string())
 
 _cmp_model = mixedlm("Rsq_test_clamped ~ C(Model)", data=_compare, groups=_compare["Dataset"]).fit()
-print("\nMixed model: Magpie (ref config) vs PySR (Dataset as random intercept):")
+print("\nMixed model: SBGP (ref config) vs PySR (Dataset as random intercept):")
 print(_cmp_model.summary())
 
-# --- Comparison plot: FFX vs PySR vs Magpie (ref config) ---
+# --- Comparison plot: FFX vs PySR vs SBGP (ref config) ---
 _ffx = _baselines[_baselines["Model"] == "FFX"][["Dataset", "Rep", "Rsq_test"]].copy()
 _ffx["Model"] = "FFX"
 
-_cmp_plot_data = {"FFX": _ffx, "PySR": _pysr, "Magpie": _magpie}
-_cmp_labels = ["FFX", "PySR", "Magpie"]
+_cmp_plot_data = {"FFX": _ffx, "PySR": _pysr, "SBGP": _sbgp}
+_cmp_labels = ["FFX", "PySR", "SBGP"]
 _rng_cmp = np.random.default_rng(42)
 
 fig_cmp, ax_cmp = plt.subplots(figsize=(3.8, 3.5))

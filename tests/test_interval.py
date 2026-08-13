@@ -1,7 +1,7 @@
 import math
 import numpy as np
 import pytest
-import Magpie.iv as m
+import SBGP.iv as m
 
 Iv           = m.Iv
 _bounds      = m._bounds

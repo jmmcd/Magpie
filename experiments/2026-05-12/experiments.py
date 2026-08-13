@@ -15,7 +15,7 @@ from sklearn.model_selection import ParameterGrid, train_test_split
 # from pysr import PySRRegressor
 # from ffx import FFXRegressor
 
-from Magpie import MagpieRegressor
+from SBGP import SBGPRegressor
 
 import sklearn, pysr
 print(sklearn.__version__)
@@ -80,7 +80,7 @@ def run_model(model, X_train, X_test, y_train, y_test):
 
 ## Run the large experiment
 # 
-# * Magpie we want to investigate hyperparameters, so `n_reps` runs per dataset per hyperparameter config.
+# * SBGP we want to investigate hyperparameters, so `n_reps` runs per dataset per hyperparameter config.
 # Every run gives a row which we put in a Pandas DataFrame.
 
 budget = 25000
@@ -202,13 +202,13 @@ def run_single(datasetname, rep, params):
     try:
         dataset_n, dataset_k = srbench_datasets[datasetname][0].shape
         X_train, X_test, y_train, y_test = srbench_splits[datasetname]
-        mr = MagpieRegressor(maxevals=budget,
+        mr = SBGPRegressor(maxevals=budget,
                              X_bounds_test_data=X_test,
                              random_state=rep,
                              **params)
         r = run_model(mr, X_train, X_test, y_train, y_test)
         param_vals = tuple(params[k] for k in param_keys)
-        r = (datasetname, dataset_n, dataset_k, rep, "Magpie", *param_vals, *r)
+        r = (datasetname, dataset_n, dataset_k, rep, "SBGP", *param_vals, *r)
         print(r, str(datetime.now()))
         return r
     except Exception as e:

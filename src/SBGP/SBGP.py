@@ -1,4 +1,4 @@
-# Magpie: multi-objective archive genetic programming (from Ireland)
+# SBGP: Size-Bin Genetic Programming (from Ireland)
 
 from pathlib import Path
 import numpy as np
@@ -52,7 +52,7 @@ class Individual:
             n_consts_used=n_consts_used
         )
 
-class MagpieRegressor(BaseEstimator, RegressorMixin):
+class SBGPRegressor(BaseEstimator, RegressorMixin):
     def __init__(self,
                  maxevals=25000,
                  init_prop=0.2,
@@ -438,7 +438,7 @@ if __name__ == '__main__':
     from sklearn.model_selection import train_test_split
     X, y = load_diabetes(return_X_y=True)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-    mr = MagpieRegressor(maxevals=20000)
+    mr = SBGPRegressor(maxevals=20000)
     mr.fit(X_train, y_train)
     pd.set_option('display.float_format', '{:.2f}'.format)
     pd.set_option('display.max_colwidth', None)

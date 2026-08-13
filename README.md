@@ -1,16 +1,15 @@
-# Magpie: multi-objective archive genetic programming (from Ireland)
+# SBGP: Size-Bin Genetic Programming
 
 ![Photo of a magpie, by Zdeněk Macháček on Unsplash](img/logo.jpg)
 
 Photo by <a href="https://unsplash.com/@zmachacek?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash">Zdeněk Macháček</a> on <a href="https://unsplash.com/photos/black-and-white-bird-on-grass-field-mOKHZYMhnQA?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash">Unsplash</a>
 
-# Disambiguation
-
-Not to be confused with:P
-
-* https://github.com/bloa/magpie (genetic improvement)
-* https://www.pik-potsdam.de/en/institute/departments/activities/land-use-modelling/magpie (land-use modelling)
-* https://www.magpiebakery.ie/ (bakery)
+"SBGP" describes the algorithm and "SB" can also stand for *snag breac*, the Irish name for Magpie.
+This project was previously called Magpie, but that name clashed with several
+existing projects in neighbouring topics, including
+[bloa/magpie](https://github.com/bloa/magpie) for genetic improvement and
+[MAgPIE](https://www.pik-potsdam.de/en/institute/departments/activities/land-use-modelling/magpie)
+for land-use modelling.
 
 # Introduction
 
@@ -22,10 +21,10 @@ language is defined by a grammar and individual genomes are just
 lists of ints. Operator Equalisation is a form of GP which constrains the size of individuals
 in the population to match a target distribution.
 
-This repo contains Magpie, a very early / experimental implementation of an approach 
-to GP symbolic regression. Like its namesake corvid, it borrows shiny ideas from many sources:
+This repo contains SBGP, a very early / experimental implementation of an approach 
+to GP symbolic regression. Like the magpie, it borrows shiny ideas from many sources:
 
-**Magpie = Grammatical Evolution + Caching + Steady-State + pseudo-Pareto Front (via Operator Equalisation) + Interval Arithmetic + Constant
+**SBGP = Grammatical Evolution + Caching + Steady-State + pseudo-Pareto Front (via Operator Equalisation) + Interval Arithmetic + Constant
 Optimisation.**
 
 
@@ -45,18 +44,18 @@ Optimisation.**
 
 ## Just to use it
 ```
-pip install git+https://github.com/jmmcd/Magpie.git
-python -m Magpie.test # check installation worked
+pip install git+https://github.com/jmmcd/SBGP.git
+python -m SBGP.test # check installation worked
 ```
 
 ## To install in order to hack on it
 
 ```
-git clone https://github.com/jmmcd/Magpie.git
-cd Magpie
+git clone https://github.com/jmmcd/SBGP.git
+cd SBGP
 pip install -e .
-python -m Magpie.test # check installation worked
-# that test is also available directly in src/Magpie/test.py
+python -m SBGP.test # check installation worked
+# that test is also available directly in src/SBGP/test.py
 ```
 
 ## Compatibility
@@ -68,11 +67,11 @@ Tested on MacOS. On Windows, equations may be not fully simplified as Sympy can 
 ```
 from sklearn.datasets import load_diabetes
 from sklearn.model_selection import train_test_split
-from Magpie import MagpieRegressor
+from SBGP import SBGPRegressor
 import pandas as pd
 X, y = load_diabetes(return_X_y=True)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-mr = MagpieRegressor(maxevals=20000)
+mr = SBGPRegressor(maxevals=20000)
 mr.fit(X_train, y_train)
 pd.set_option('display.float_format', '{:.2f}'.format)
 pd.set_option('display.max_colwidth', None)
